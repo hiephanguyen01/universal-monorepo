@@ -1,0 +1,1 @@
+import Link from 'next/link'; export default function Page(){return <main className="container"><div className="card"><h1 className="text-3xl font-bold">Universal Monorepo</h1><p className="my-4">Web + Mobile + API foundation.</p><Link href="/login">Login</Link> · <Link href="/register">Register</Link> · <Link href="/profile">Profile</Link></div></main>}

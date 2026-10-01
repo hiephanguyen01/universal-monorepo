@@ -1,0 +1,11 @@
+node_modules
+.pnpm-store
+.turbo
+.next
+dist
+coverage
+.env
+.env.local
+apps/api/src/generated/prisma
+apps/mobile/.expo
+.DS_Store

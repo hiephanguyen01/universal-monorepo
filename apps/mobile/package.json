@@ -1,0 +1,5 @@
+{
+  "name":"@repo/mobile","private":true,"main":"expo-router/entry","scripts":{"start":"expo start","android":"expo start --android","ios":"expo start --ios","typecheck":"tsc --noEmit","lint":"eslint .","build":"echo 'Use EAS Build for native artifacts'","test":"vitest run"},
+  "dependencies":{"@repo/api-client":"workspace:*","@repo/schemas":"workspace:*","@repo/types":"workspace:*","@tanstack/react-query":"^5.0.0","expo":"~57.0.0","expo-router":"~57.0.23","expo-secure-store":"~15.0.0","react":"19.2.3","react-native":"0.86.0","react-hook-form":"^7.0.0","zod":"^4.0.0","zustand":"^5.0.0"},
+  "devDependencies":{"@types/react":"^19.0.0","eslint":"^9.0.0","typescript":"^5.9.0","vitest":"^3.2.0"}
+}

@@ -1,0 +1,3 @@
+import * as SecureStore from 'expo-secure-store'; import { ApiClient, type TokenStorage } from '@repo/api-client'; import type { AuthTokens } from '@repo/types';
+class SecureTokenStorage implements TokenStorage { getAccessToken(){return SecureStore.getItemAsync('access_token')} getRefreshToken(){return SecureStore.getItemAsync('refresh_token')} async setTokens(t:AuthTokens){await Promise.all([SecureStore.setItemAsync('access_token',t.accessToken),SecureStore.setItemAsync('refresh_token',t.refreshToken)])} async clear(){await Promise.all([SecureStore.deleteItemAsync('access_token'),SecureStore.deleteItemAsync('refresh_token')])} }
+export const api=new ApiClient(process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1',new SecureTokenStorage());

@@ -1,0 +1,34 @@
+{
+  "name": "universal-monorepo",
+  "private": true,
+  "packageManager": "pnpm@12.8.2",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "turbo dev --filter=@repo/web --filter=@repo/api",
+    "dev:web": "pnpm --filter @repo/web dev",
+    "dev:api": "pnpm --filter @repo/api dev",
+    "dev:mobile": "pnpm --filter @repo/mobile start",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "format": "prettier --write .",
+    "db:generate": "pnpm --filter @repo/api db:generate",
+    "db:migrate": "pnpm --filter @repo/api db:migrate",
+    "db:seed": "pnpm --filter @repo/api db:seed",
+    "db:studio": "pnpm --filter @repo/api db:studio",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "turbo": "^2.11.0",
+    "typescript": "^5.9.0",
+    "eslint": "^9.0.0",
+    "@eslint/js": "^9.0.0",
+    "typescript-eslint": "^8.0.0",
+    "globals": "^16.0.0"
+  }
+}

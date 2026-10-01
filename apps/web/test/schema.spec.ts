@@ -1,0 +1,1 @@
+import { describe,expect,it } from 'vitest'; import { loginSchema } from '@repo/schemas'; describe('login schema',()=>{it('rejects invalid email',()=>expect(loginSchema.safeParse({email:'bad',password:'12345678'}).success).toBe(false))});
