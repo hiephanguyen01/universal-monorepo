@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "@/modules/auth/auth.module";
 import { GetCurrentUserUseCase } from "./application/use-cases/get-current-user.use-case";
+import { ListUsersUseCase } from "./application/use-cases/list-users.use-case";
 import { UpdateCurrentUserUseCase } from "./application/use-cases/update-current-user.use-case";
 import type { UserRepository } from "./domain/repositories/user.repository";
 import { UsersPersistenceModule } from "./infrastructure/users-persistence.module";
@@ -19,6 +20,12 @@ import { USER_REPOSITORY } from "./users.tokens";
       inject: [USER_REPOSITORY],
       useFactory: (users: UserRepository) =>
         new GetCurrentUserUseCase(users),
+    },
+    {
+      provide: ListUsersUseCase,
+      inject: [USER_REPOSITORY],
+      useFactory: (users: UserRepository) =>
+        new ListUsersUseCase(users),
     },
     {
       provide: UpdateCurrentUserUseCase,
