@@ -1,6 +1,7 @@
+import type { UserRole } from "@/modules/users/domain/entities/user.entity";
+
 export type AuthenticatedRole =
-  | "USER"
-  | "ADMIN";
+  UserRole;
 
 export interface AuthenticatedUser {
   id: string;
