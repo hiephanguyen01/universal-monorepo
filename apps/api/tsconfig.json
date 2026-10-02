@@ -1,6 +1,10 @@
 {
   "extends": "../../packages/typescript-config/base.json",
   "compilerOptions": {
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "module": "CommonJS",
     "target": "ES2022",
     "moduleResolution": "Node",

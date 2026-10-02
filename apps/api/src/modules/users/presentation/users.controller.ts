@@ -1,7 +1,10 @@
 import { Body, Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
 import { IsString, MinLength } from 'class-validator';
-import { JwtAuthGuard } from '../../auth/presentation/jwt-auth.guard';
-import { GetCurrentUserUseCase, UpdateCurrentUserUseCase } from '../application/user.use-cases';
+import { JwtAuthGuard } from "@/modules/auth/presentation/jwt-auth.guard";
+import {
+  GetCurrentUserUseCase,
+  UpdateCurrentUserUseCase,
+} from "@/modules/users/application/user.use-cases";
 class UpdateMeDto { @IsString() @MinLength(2) fullName!:string; }
 const present=(u:any)=>({id:u.id,email:u.email,fullName:u.fullName,role:u.role,status:u.status,createdAt:u.createdAt,updatedAt:u.updatedAt});
 @Controller('users') @UseGuards(JwtAuthGuard)

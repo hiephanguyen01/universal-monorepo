@@ -7,6 +7,38 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String
+  role         UserRole @default(USER)
+  status       UserStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id String @id @default(cuid())
+
+  userId String
+
+  tokenHash String
+
+  expiresAt DateTime
+
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation( fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
 
 enum UserRole {
   USER
@@ -16,28 +48,5 @@ enum UserRole {
 enum UserStatus {
   ACTIVE
   INACTIVE
-}
-
-model User {
-  id           String         @id @default(cuid())
-  email        String         @unique
-  passwordHash String
-  fullName     String
-  role         UserRole       @default(USER)
-  status       UserStatus     @default(ACTIVE)
-  refreshTokens RefreshToken[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-}
-
-model RefreshToken {
-  id        String   @id
-  userId    String
-  tokenHash String
-  expiresAt DateTime
-  revokedAt DateTime?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId])
-  @@index([expiresAt])
+  BLOCKED
 }
