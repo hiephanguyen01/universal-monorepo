@@ -1,9 +1,9 @@
-import { Module } from "@nestjs/common";
-import { JwtModule } from "@nestjs/jwt";
 import { PrismaModule } from "@/infrastructure/prisma/prisma.module";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import { UsersPersistenceModule } from "@/modules/users/infrastructure/users-persistence.module";
 import { USER_REPOSITORY } from "@/modules/users/users.tokens";
+import { Module } from "@nestjs/common";
+import { JwtModule } from "@nestjs/jwt";
 import type { PasswordHasher } from "./application/ports/password-hasher.port";
 import type { RefreshTokenRepository } from "./application/ports/refresh-token.repository";
 import type { TokenService } from "./application/ports/token-service.port";
@@ -21,14 +21,11 @@ import { ArgonPasswordHasher } from "./infrastructure/security/argon-password-ha
 import { JwtTokenService } from "./infrastructure/security/jwt-token.service";
 import { AuthController } from "./presentation/controllers/auth.controller";
 import { JwtAuthGuard } from "./presentation/guards/jwt-auth.guard";
+import { PermissionsGuard } from "./presentation/guards/permissions.guard";
 import { RolesGuard } from "./presentation/guards/roles.guard";
 
 @Module({
-  imports: [
-    JwtModule.register({}),
-    PrismaModule,
-    UsersPersistenceModule,
-  ],
+  imports: [JwtModule.register({}), PrismaModule, UsersPersistenceModule],
   controllers: [AuthController],
   providers: [
     {
@@ -57,12 +54,7 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
         tokenService: TokenService,
         refreshTokens: RefreshTokenRepository,
       ) =>
-        new RegisterUseCase(
-          users,
-          passwordHasher,
-          tokenService,
-          refreshTokens,
-        ),
+        new RegisterUseCase(users, passwordHasher, tokenService, refreshTokens),
     },
     {
       provide: LoginUseCase,
@@ -77,13 +69,7 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
         passwordHasher: PasswordHasher,
         tokenService: TokenService,
         refreshTokens: RefreshTokenRepository,
-      ) =>
-        new LoginUseCase(
-          users,
-          passwordHasher,
-          tokenService,
-          refreshTokens,
-        ),
+      ) => new LoginUseCase(users, passwordHasher, tokenService, refreshTokens),
     },
     {
       provide: RefreshTokenUseCase,
@@ -108,25 +94,16 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
     },
     {
       provide: LogoutUseCase,
-      inject: [
-        TOKEN_SERVICE,
-        REFRESH_TOKEN_REPOSITORY,
-      ],
+      inject: [TOKEN_SERVICE, REFRESH_TOKEN_REPOSITORY],
       useFactory: (
         tokenService: TokenService,
         refreshTokens: RefreshTokenRepository,
-      ) =>
-        new LogoutUseCase(
-          tokenService,
-          refreshTokens,
-        ),
+      ) => new LogoutUseCase(tokenService, refreshTokens),
     },
     JwtAuthGuard,
     RolesGuard,
+    PermissionsGuard,
   ],
-  exports: [
-    JwtAuthGuard,
-    RolesGuard,
-  ],
+  exports: [JwtAuthGuard, RolesGuard, PermissionsGuard],
 })
 export class AuthModule {}
