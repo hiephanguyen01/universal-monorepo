@@ -1,8 +1,8 @@
 import { UnauthorizedError } from "@/common/errors";
-import type { PasswordHasher } from "@/modules/auth/application/ports/password-hasher.port";
-import type { RefreshTokenRepository } from "@/modules/auth/application/ports/refresh-token.repository";
-import type { TokenService } from "@/modules/auth/application/ports/token-service.port";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
+import type { PasswordHasher } from "../ports/password-hasher.port";
+import type { RefreshTokenRepository } from "../ports/refresh-token.repository";
+import type { TokenService } from "../ports/token-service.port";
 
 export interface LoginInput {
   email: string;
@@ -12,12 +12,14 @@ export interface LoginInput {
 export interface LoginOutput {
   accessToken: string;
   refreshToken: string;
-
   user: {
     id: string;
     email: string;
     fullName: string;
     role: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
   };
 }
 
@@ -30,9 +32,10 @@ export class LoginUseCase {
   ) {}
 
   async execute(input: LoginInput): Promise<LoginOutput> {
-    const user = await this.users.findByEmail(input.email);
+    const email = input.email.trim().toLowerCase();
+    const user = await this.users.findByEmail(email);
 
-    if (!user) {
+    if (!user || user.status !== "ACTIVE") {
       throw new UnauthorizedError("Invalid email or password");
     }
 
@@ -51,9 +54,8 @@ export class LoginUseCase {
       role: user.role,
     });
 
-    const generatedRefreshToken = await this.tokenService.generateRefreshToken(
-      user.id,
-    );
+    const generatedRefreshToken =
+      await this.tokenService.generateRefreshToken(user.id);
 
     const refreshTokenHash = await this.passwordHasher.hash(
       generatedRefreshToken.token,
@@ -61,11 +63,8 @@ export class LoginUseCase {
 
     await this.refreshTokens.create({
       id: generatedRefreshToken.sessionId,
-
       userId: user.id,
-
       tokenHash: refreshTokenHash,
-
       expiresAt: generatedRefreshToken.expiresAt,
     });
 
@@ -77,6 +76,9 @@ export class LoginUseCase {
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        status: user.status,
+        createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(),
       },
     };
   }
