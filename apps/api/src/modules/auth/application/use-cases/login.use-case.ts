@@ -2,7 +2,7 @@ import { UnauthorizedError } from "@/common/errors";
 import type { PasswordHasher } from "@/modules/auth/application/ports/password-hasher.port";
 import type { RefreshTokenRepository } from "@/modules/auth/application/ports/refresh-token.repository";
 import type { TokenService } from "@/modules/auth/application/ports/token-service.port";
-import type { UserRepository } from "@/modules/users/domain/user";
+import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 
 export interface LoginInput {
   email: string;
@@ -51,22 +51,27 @@ export class LoginUseCase {
       role: user.role,
     });
 
-    const refreshToken = await this.tokenService.generateRefreshToken({
-      sub: user.id,
-    });
+    const generatedRefreshToken = await this.tokenService.generateRefreshToken(
+      user.id,
+    );
 
-    const refreshTokenHash = await this.passwordHasher.hash(refreshToken);
+    const refreshTokenHash = await this.passwordHasher.hash(
+      generatedRefreshToken.token,
+    );
 
     await this.refreshTokens.create({
+      id: generatedRefreshToken.sessionId,
+
       userId: user.id,
+
       tokenHash: refreshTokenHash,
-      expiresAt: this.tokenService.getRefreshTokenExpirationDate(),
+
+      expiresAt: generatedRefreshToken.expiresAt,
     });
 
     return {
       accessToken,
-      refreshToken,
-
+      refreshToken: generatedRefreshToken.token,
       user: {
         id: user.id,
         email: user.email,

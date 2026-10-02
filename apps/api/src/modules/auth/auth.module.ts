@@ -1,71 +1,214 @@
-import { PrismaService } from "@/infrastructure/prisma/prisma.service";
-import type { PasswordHasher } from "@/modules/auth/application/ports/password-hasher.port";
-import type { RefreshTokenRepository } from "@/modules/auth/application/ports/refresh-token.repository";
-import type { TokenService } from "@/modules/auth/application/ports/token-service.port";
-import { LoginUseCase } from "@/modules/auth/application/use-cases/login.use-case";
+// apps/api/src/modules/auth/auth.module.ts
+
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+
+import {
+  USER_REPOSITORY,
+} from '@/modules/users/users.tokens';
+
+import {
+  UsersPersistenceModule,
+} from '@/modules/users/infrastructure/users-persistence.module';
+
+import type {
+  UserRepository,
+} from '@/modules/users/domain/repositories/user.repository';
+
+
 import {
   PASSWORD_HASHER,
   REFRESH_TOKEN_REPOSITORY,
   TOKEN_SERVICE,
-} from "@/modules/auth/auth.tokens";
-import { PrismaRefreshTokenRepository } from "@/modules/auth/infrastructure/persistence/prisma-refresh-token.repository";
-import { ArgonPasswordHasher } from "@/modules/auth/infrastructure/security/argon-password-hasher";
-import { JwtTokenService } from "@/modules/auth/infrastructure/security/jwt-token.service";
-import { AuthController } from "@/modules/auth/presentation/controllers/auth.controller";
-import { JwtAuthGuard } from "@/modules/auth/presentation/jwt-auth.guard";
+} from './auth.tokens';
+
+import type {
+  PasswordHasher,
+} from './application/ports/password-hasher.port';
+
+import type {
+  RefreshTokenRepository,
+} from './application/ports/refresh-token.repository';
+
+import type {
+  TokenService,
+} from './application/ports/token-service.port';
+
 import {
-  USER_REPOSITORY,
-  type UserRepository,
-} from "@/modules/users/domain/user";
-import { PrismaUserRepository } from "@/modules/users/infrastructure/prisma-user.repository";
-import { Module } from "@nestjs/common";
-import { JwtModule } from "@nestjs/jwt";
+  LoginUseCase,
+} from './application/use-cases/login.use-case';
+
+import {
+  RefreshTokenUseCase,
+} from './application/use-cases/refresh-token.use-case';
+
+import {
+  LogoutUseCase,
+} from './application/use-cases/logout.use-case';
+
+import {
+  ArgonPasswordHasher,
+} from './infrastructure/security/argon-password-hasher';
+
+import {
+  JwtTokenService,
+} from './infrastructure/security/jwt-token.service';
+
+import {
+  PrismaRefreshTokenRepository,
+} from './infrastructure/persistence/prisma-refresh-token.repository';
+
+import {
+  AuthController,
+} from './presentation/controllers/auth.controller';
+
+import {
+  JwtAuthGuard,
+} from './presentation/guards/jwt-auth.guard';
+import { PrismaModule } from '@/infrastructure/prisma/prisma.module';
 
 @Module({
-  imports: [JwtModule.register({})],
-  controllers: [AuthController],
+  imports: [
+    JwtModule.register({}),
+
+    PrismaModule,
+
+    UsersPersistenceModule,
+  ],
+
+  controllers: [
+    AuthController,
+  ],
+
   providers: [
-    PrismaService,
-    {
-      provide: USER_REPOSITORY,
-      useClass: PrismaUserRepository,
-    },
+    /**
+     * Password hashing implementation
+     */
     {
       provide: PASSWORD_HASHER,
       useClass: ArgonPasswordHasher,
     },
+
+    /**
+     * JWT implementation
+     */
     {
       provide: TOKEN_SERVICE,
       useClass: JwtTokenService,
     },
+
+    /**
+     * Refresh-token persistence
+     */
     {
-      provide: REFRESH_TOKEN_REPOSITORY,
-      useClass: PrismaRefreshTokenRepository,
+      provide:
+        REFRESH_TOKEN_REPOSITORY,
+
+      useClass:
+        PrismaRefreshTokenRepository,
     },
+
+    /**
+     * Login
+     */
     {
       provide: LoginUseCase,
+
       inject: [
         USER_REPOSITORY,
         PASSWORD_HASHER,
         TOKEN_SERVICE,
         REFRESH_TOKEN_REPOSITORY,
       ],
+
       useFactory: (
         users: UserRepository,
-        passwordHasher: PasswordHasher,
-        tokenService: TokenService,
-        refreshTokens: RefreshTokenRepository,
-      ) => {
-        return new LoginUseCase(
+
+        passwordHasher:
+          PasswordHasher,
+
+        tokenService:
+          TokenService,
+
+        refreshTokens:
+          RefreshTokenRepository,
+      ) =>
+        new LoginUseCase(
           users,
           passwordHasher,
           tokenService,
           refreshTokens,
-        );
-      },
+        ),
     },
+
+    /**
+     * Refresh token
+     */
+    {
+      provide:
+        RefreshTokenUseCase,
+
+      inject: [
+        USER_REPOSITORY,
+        REFRESH_TOKEN_REPOSITORY,
+        PASSWORD_HASHER,
+        TOKEN_SERVICE,
+      ],
+
+      useFactory: (
+        users:
+          UserRepository,
+
+        refreshTokens:
+          RefreshTokenRepository,
+
+        passwordHasher:
+          PasswordHasher,
+
+        tokenService:
+          TokenService,
+      ) =>
+        new RefreshTokenUseCase(
+          users,
+          refreshTokens,
+          passwordHasher,
+          tokenService,
+        ),
+    },
+
+    /**
+     * Logout
+     */
+    {
+      provide:
+        LogoutUseCase,
+
+      inject: [
+        TOKEN_SERVICE,
+        REFRESH_TOKEN_REPOSITORY,
+      ],
+
+      useFactory: (
+        tokenService:
+          TokenService,
+
+        refreshTokens:
+          RefreshTokenRepository,
+      ) =>
+        new LogoutUseCase(
+          tokenService,
+          refreshTokens,
+        ),
+    },
+
+    /**
+     * Access-token guard
+     */
     JwtAuthGuard,
   ],
-  exports: [JwtAuthGuard, TOKEN_SERVICE, USER_REPOSITORY, PrismaService],
+
+  exports: [
+    JwtAuthGuard,
+  ],
 })
 export class AuthModule {}

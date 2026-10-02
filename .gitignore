@@ -9,3 +9,6 @@ coverage
 apps/api/src/generated/prisma
 apps/mobile/.expo
 .DS_Store
+.agents
+.claude
+.windsurf

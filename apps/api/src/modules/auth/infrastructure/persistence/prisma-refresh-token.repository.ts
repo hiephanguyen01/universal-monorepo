@@ -15,21 +15,21 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
   create(input: CreateRefreshTokenInput): Promise<RefreshTokenRecord> {
     return this.prisma.refreshToken.create({
       data: {
+        id: input.id,
+
         userId: input.userId,
+
         tokenHash: input.tokenHash,
+
         expiresAt: input.expiresAt,
       },
     });
   }
 
-  findActiveByUserId(userId: string): Promise<RefreshTokenRecord[]> {
-    return this.prisma.refreshToken.findMany({
+  findById(id: string): Promise<RefreshTokenRecord | null> {
+    return this.prisma.refreshToken.findUnique({
       where: {
-        userId,
-        revokedAt: null,
-        expiresAt: {
-          gt: new Date(),
-        },
+        id,
       },
     });
   }
@@ -50,6 +50,7 @@ export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
     await this.prisma.refreshToken.updateMany({
       where: {
         userId,
+
         revokedAt: null,
       },
 
