@@ -3,6 +3,7 @@ import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 import { User } from "@/modules/users/domain/entities/user.entity";
 import type {
   CreateUserInput,
+  FindUsersInput,
   UpdateUserProfileInput,
   UserRepository,
 } from "@/modules/users/domain/repositories/user.repository";
@@ -39,6 +40,28 @@ export class PrismaUserRepository
     return record
       ? new User(record)
       : null;
+  }
+
+  async findMany(
+    input: FindUsersInput,
+  ): Promise<User[]> {
+    const records =
+      await this.prisma.user.findMany({
+        skip: input.skip,
+        take: input.take,
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+    return records.map(
+      (record) =>
+        new User(record),
+    );
+  }
+
+  count(): Promise<number> {
+    return this.prisma.user.count();
   }
 
   async create(
