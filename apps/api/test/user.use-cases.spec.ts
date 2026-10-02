@@ -77,7 +77,7 @@ class InMemoryUserRepository implements UserRepository {
     }
 
     const current =
-      this.users[index];
+      this.users[index]!;
 
     const updated =
       new User({
