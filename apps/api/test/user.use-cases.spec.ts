@@ -27,9 +27,7 @@ class InMemoryUserRepository implements UserRepository {
     );
   }
 
-  create(
-    _input: CreateUserInput,
-  ): Promise<User> {
+  create(): Promise<User> {
     throw new Error("Not implemented");
   }
 
