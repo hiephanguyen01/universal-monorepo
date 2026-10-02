@@ -1,5 +1,11 @@
-export type UserRole = "USER" | "ADMIN";
-export type UserStatus = "ACTIVE" | "INACTIVE";
+export type UserRole =
+  | "USER"
+  | "ADMIN";
+
+export type UserStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "BLOCKED";
 
 export interface UserDto {
   id: string;
@@ -16,7 +22,9 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-export interface AuthSession extends AuthTokens {
+export interface AuthSession
+  extends AuthTokens
+{
   user: UserDto;
 }
 
@@ -24,8 +32,16 @@ export interface ApiSuccess<T> {
   success: true;
   data: T;
 }
+
 export interface ApiFailure {
   success: false;
-  error: { code: string; message: string; details: unknown | null };
+  error: {
+    code: string;
+    message: string;
+    details: unknown | null;
+  };
 }
-export type ApiResponse<T> = ApiSuccess<T> | ApiFailure;
+
+export type ApiResponse<T> =
+  | ApiSuccess<T>
+  | ApiFailure;
