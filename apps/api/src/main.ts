@@ -4,13 +4,17 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
 import "reflect-metadata";
 import { AppModule } from "./app.module";
+import { ApiResponseInterceptor } from "./common/api-response.interceptor";
 import { AppExceptionFilter } from "./common/app-exception.filter";
 import { env } from "./config/env";
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.setGlobalPrefix("api/v1");
   app.use(helmet());
   app.enableCors({ origin: true, credentials: true });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -18,7 +22,10 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
   app.useGlobalFilters(new AppExceptionFilter());
+  app.useGlobalInterceptors(new ApiResponseInterceptor());
+
   const doc = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
@@ -27,7 +34,10 @@ async function bootstrap() {
       .addBearerAuth()
       .build(),
   );
+
   SwaggerModule.setup("api/docs", app, doc);
+
   await app.listen(env.API_PORT);
 }
-bootstrap();
+
+void bootstrap();
