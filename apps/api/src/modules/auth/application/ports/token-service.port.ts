@@ -1,7 +1,9 @@
+import type { UserRole } from "@/modules/users/domain/entities/user.entity";
+
 export interface AccessTokenPayload {
   sub: string;
   email: string;
-  role: string;
+  role: UserRole;
 }
 
 export interface RefreshTokenPayload {
@@ -16,11 +18,19 @@ export interface GeneratedRefreshToken {
 }
 
 export interface TokenService {
-  generateAccessToken(payload: AccessTokenPayload): Promise<string>;
+  generateAccessToken(
+    payload: AccessTokenPayload,
+  ): Promise<string>;
 
-  generateRefreshToken(userId: string): Promise<GeneratedRefreshToken>;
+  generateRefreshToken(
+    userId: string,
+  ): Promise<GeneratedRefreshToken>;
 
-  verifyAccessToken(token: string): Promise<AccessTokenPayload>;
+  verifyAccessToken(
+    token: string,
+  ): Promise<AccessTokenPayload>;
 
-  verifyRefreshToken(token: string): Promise<RefreshTokenPayload>;
+  verifyRefreshToken(
+    token: string,
+  ): Promise<RefreshTokenPayload>;
 }
