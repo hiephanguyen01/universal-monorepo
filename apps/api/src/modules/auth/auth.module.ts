@@ -21,6 +21,7 @@ import { ArgonPasswordHasher } from "./infrastructure/security/argon-password-ha
 import { JwtTokenService } from "./infrastructure/security/jwt-token.service";
 import { AuthController } from "./presentation/controllers/auth.controller";
 import { JwtAuthGuard } from "./presentation/guards/jwt-auth.guard";
+import { RolesGuard } from "./presentation/guards/roles.guard";
 
 @Module({
   imports: [
@@ -121,7 +122,11 @@ import { JwtAuthGuard } from "./presentation/guards/jwt-auth.guard";
         ),
     },
     JwtAuthGuard,
+    RolesGuard,
   ],
-  exports: [JwtAuthGuard],
+  exports: [
+    JwtAuthGuard,
+    RolesGuard,
+  ],
 })
 export class AuthModule {}
