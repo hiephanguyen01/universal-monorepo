@@ -1,5 +1,4 @@
 import { NotFoundError } from "@/common/errors";
-
 import type { UserRepository } from "../../domain/repositories/user.repository";
 
 export interface GetCurrentUserOutput {
@@ -8,12 +7,18 @@ export interface GetCurrentUserOutput {
   fullName: string;
   role: string;
   status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export class GetCurrentUserUseCase {
-  constructor(private readonly users: UserRepository) {}
+  constructor(
+    private readonly users: UserRepository,
+  ) {}
 
-  async execute(userId: string): Promise<GetCurrentUserOutput> {
+  async execute(
+    userId: string,
+  ): Promise<GetCurrentUserOutput> {
     const user = await this.users.findById(userId);
 
     if (!user) {
@@ -26,6 +31,8 @@ export class GetCurrentUserUseCase {
       fullName: user.fullName,
       role: user.role,
       status: user.status,
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
     };
   }
 }
