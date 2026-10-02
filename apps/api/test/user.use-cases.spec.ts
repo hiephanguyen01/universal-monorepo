@@ -3,7 +3,6 @@ import { GetCurrentUserUseCase } from "../src/modules/users/application/use-case
 import { UpdateCurrentUserUseCase } from "../src/modules/users/application/use-cases/update-current-user.use-case";
 import { User } from "../src/modules/users/domain/entities/user.entity";
 import type {
-  CreateUserInput,
   UpdateUserProfileInput,
   UserRepository,
 } from "../src/modules/users/domain/repositories/user.repository";
