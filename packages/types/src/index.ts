@@ -28,6 +28,18 @@ export interface AuthSession
   user: UserDto;
 }
 
+export interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  meta: PaginationMeta;
+}
+
 export interface ApiSuccess<T> {
   success: true;
   data: T;
