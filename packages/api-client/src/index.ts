@@ -6,6 +6,7 @@ import type {
 import type {
   AuthSession,
   AuthTokens,
+  PaginatedResult,
   UserDto,
 } from "@repo/types";
 
@@ -210,6 +211,39 @@ export class ApiClient {
   };
 
   readonly users = {
+    list: (
+      params: {
+        page?: number;
+        pageSize?: number;
+      } = {},
+    ) => {
+      const searchParams =
+        new URLSearchParams();
+
+      if (params.page) {
+        searchParams.set(
+          "page",
+          String(params.page),
+        );
+      }
+
+      if (params.pageSize) {
+        searchParams.set(
+          "pageSize",
+          String(params.pageSize),
+        );
+      }
+
+      const query =
+        searchParams.toString();
+
+      return this.request<
+        PaginatedResult<UserDto>
+      >(
+        `/users${query ? `?${query}` : ""}`,
+      );
+    },
+
     me: () =>
       this.request<UserDto>(
         "/users/me",
