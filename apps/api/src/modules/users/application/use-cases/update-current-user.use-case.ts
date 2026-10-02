@@ -1,4 +1,5 @@
 import { NotFoundError } from "@/common/errors";
+
 import type { UserRepository } from "../../domain/repositories/user.repository";
 
 export interface UpdateCurrentUserInput {
@@ -16,32 +17,36 @@ export interface UpdateCurrentUserOutput {
 }
 
 export class UpdateCurrentUserUseCase {
-  constructor(
-    private readonly users: UserRepository,
-  ) {}
+  constructor(private readonly users: UserRepository) {}
 
   async execute(
     userId: string,
     input: UpdateCurrentUserInput,
   ): Promise<UpdateCurrentUserOutput> {
-    const currentUser = await this.users.findById(userId);
+    const user = await this.users.findById(userId);
 
-    if (!currentUser) {
+    if (!user) {
       throw new NotFoundError("User not found");
     }
 
-    const user = await this.users.updateProfile(userId, {
-      fullName: input.fullName.trim(),
-    });
+    user.changeFullName(input.fullName);
+
+    const savedUser = await this.users.save(user);
 
     return {
-      id: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-      status: user.status,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      id: savedUser.id,
+
+      email: savedUser.email,
+
+      fullName: savedUser.fullName,
+
+      role: savedUser.role,
+
+      status: savedUser.status,
+
+      createdAt: savedUser.createdAt.toISOString(),
+
+      updatedAt: savedUser.updatedAt.toISOString(),
     };
   }
 }

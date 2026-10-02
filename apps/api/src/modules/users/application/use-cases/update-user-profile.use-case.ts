@@ -34,30 +34,30 @@ export class UpdateUserProfileUseCase {
   ): Promise<UpdateUserProfileOutput> {
     this.accessPolicy.assertCanUpdateProfile(actor, targetUserId);
 
-    const existingUser = await this.users.findById(targetUserId);
+    const user = await this.users.findById(targetUserId);
 
-    if (!existingUser) {
+    if (!user) {
       throw new NotFoundError("User not found");
     }
 
-    const user = await this.users.updateProfile(targetUserId, {
-      fullName: input.fullName.trim(),
-    });
+    user.changeFullName(input.fullName);
+
+    const savedUser = await this.users.save(user);
 
     return {
-      id: user.id,
+      id: savedUser.id,
 
-      email: user.email,
+      email: savedUser.email,
 
-      fullName: user.fullName,
+      fullName: savedUser.fullName,
 
-      role: user.role,
+      role: savedUser.role,
 
-      status: user.status,
+      status: savedUser.status,
 
-      createdAt: user.createdAt.toISOString(),
+      createdAt: savedUser.createdAt.toISOString(),
 
-      updatedAt: user.updatedAt.toISOString(),
+      updatedAt: savedUser.updatedAt.toISOString(),
     };
   }
 }

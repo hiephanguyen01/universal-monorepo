@@ -1,7 +1,4 @@
-import type {
-  User,
-  UserRole,
-} from "../entities/user.entity";
+import type { User, UserRole } from "../entities/user.entity";
 
 export interface CreateUserInput {
   email: string;
@@ -10,9 +7,6 @@ export interface CreateUserInput {
   role?: UserRole;
 }
 
-export interface UpdateUserProfileInput {
-  fullName: string;
-}
 
 export interface FindUsersInput {
   skip: number;
@@ -20,26 +14,15 @@ export interface FindUsersInput {
 }
 
 export interface UserRepository {
-  findById(
-    id: string,
-  ): Promise<User | null>;
+  findById(id: string): Promise<User | null>;
 
-  findByEmail(
-    email: string,
-  ): Promise<User | null>;
+  findByEmail(email: string): Promise<User | null>;
 
-  findMany(
-    input: FindUsersInput,
-  ): Promise<User[]>;
+  findMany(input: FindUsersInput): Promise<User[]>;
 
   count(): Promise<number>;
 
-  create(
-    input: CreateUserInput,
-  ): Promise<User>;
+  create(input: CreateUserInput): Promise<User>;
 
-  updateProfile(
-    id: string,
-    input: UpdateUserProfileInput,
-  ): Promise<User>;
+  save(user: User): Promise<User>;
 }
