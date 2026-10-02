@@ -1,9 +1,7 @@
+import { UnauthorizedError } from "@/common/errors";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import type { PasswordHasher } from "../ports/password-hasher.port";
-
 import type { RefreshTokenRepository } from "../ports/refresh-token.repository";
-
-import { UnauthorizedError } from "@/common/errors";
 import type { TokenService } from "../ports/token-service.port";
 
 export interface RefreshTokenInput {
@@ -18,19 +16,20 @@ export interface RefreshTokenOutput {
 export class RefreshTokenUseCase {
   constructor(
     private readonly users: UserRepository,
-
     private readonly refreshTokens: RefreshTokenRepository,
-
     private readonly passwordHasher: PasswordHasher,
-
     private readonly tokenService: TokenService,
   ) {}
 
-  async execute(input: RefreshTokenInput): Promise<RefreshTokenOutput> {
+  async execute(
+    input: RefreshTokenInput,
+  ): Promise<RefreshTokenOutput> {
     let payload;
 
     try {
-      payload = await this.tokenService.verifyRefreshToken(input.refreshToken);
+      payload = await this.tokenService.verifyRefreshToken(
+        input.refreshToken,
+      );
     } catch {
       throw new UnauthorizedError("Invalid refresh token");
     }
@@ -64,27 +63,20 @@ export class RefreshTokenUseCase {
 
     const user = await this.users.findById(session.userId);
 
-    if (!user) {
-      throw new UnauthorizedError("User no longer exists");
+    if (!user || user.status !== "ACTIVE") {
+      throw new UnauthorizedError("User is not active");
     }
-
-    //
-    // Rotate refresh token.
-    //
 
     await this.refreshTokens.revoke(session.id);
 
     const accessToken = await this.tokenService.generateAccessToken({
       sub: user.id,
-
       email: user.email,
-
       role: user.role,
     });
 
-    const nextRefreshToken = await this.tokenService.generateRefreshToken(
-      user.id,
-    );
+    const nextRefreshToken =
+      await this.tokenService.generateRefreshToken(user.id);
 
     const nextTokenHash = await this.passwordHasher.hash(
       nextRefreshToken.token,
@@ -92,17 +84,13 @@ export class RefreshTokenUseCase {
 
     await this.refreshTokens.create({
       id: nextRefreshToken.sessionId,
-
       userId: user.id,
-
       tokenHash: nextTokenHash,
-
       expiresAt: nextRefreshToken.expiresAt,
     });
 
     return {
       accessToken,
-
       refreshToken: nextRefreshToken.token,
     };
   }
