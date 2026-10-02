@@ -81,15 +81,11 @@ class FakePasswordHasher implements PasswordHasher {
 }
 
 class FakeTokenService implements TokenService {
-  generateAccessToken(
-    _payload: AccessTokenPayload,
-  ): Promise<string> {
+  generateAccessToken(): Promise<string> {
     return Promise.resolve("access-token");
   }
 
-  generateRefreshToken(
-    _userId: string,
-  ): Promise<GeneratedRefreshToken> {
+  generateRefreshToken(): Promise<GeneratedRefreshToken> {
     return Promise.resolve({
       token: "refresh-token",
       sessionId: "session-1",
@@ -97,15 +93,11 @@ class FakeTokenService implements TokenService {
     });
   }
 
-  verifyAccessToken(
-    _token: string,
-  ): Promise<AccessTokenPayload> {
+  verifyAccessToken(): Promise<AccessTokenPayload> {
     throw new Error("Not implemented");
   }
 
-  verifyRefreshToken(
-    _token: string,
-  ): Promise<RefreshTokenPayload> {
+  verifyRefreshToken(): Promise<RefreshTokenPayload> {
     throw new Error("Not implemented");
   }
 }
