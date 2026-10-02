@@ -30,6 +30,27 @@ class InMemoryUserRepository implements UserRepository {
     return this.items.find((user) => user.id === id) ?? null;
   }
 
+  findMany({
+    skip,
+    take,
+  }: {
+    skip: number;
+    take: number;
+  }): Promise<User[]> {
+    return Promise.resolve(
+      this.items.slice(
+        skip,
+        skip + take,
+      ),
+    );
+  }
+
+  count(): Promise<number> {
+    return Promise.resolve(
+      this.items.length,
+    );
+  }
+
   async create(input: CreateUserInput): Promise<User> {
     const user = new User({
       id: "user-1",
