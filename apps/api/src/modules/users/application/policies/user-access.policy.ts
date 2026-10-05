@@ -1,5 +1,5 @@
 import { ForbiddenError } from "@/common/errors";
-import { UserRole } from "@/modules/users/domain/entities/user.entity";
+import type { UserRole } from "@/modules/users/domain/entities/user.entity";
 
 export interface UserActor {
   id: string;
