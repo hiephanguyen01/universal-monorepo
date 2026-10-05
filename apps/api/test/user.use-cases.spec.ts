@@ -205,6 +205,8 @@ function createUser(
       input.role,
     status:
       "ACTIVE",
+    version:
+      0,
     createdAt,
     updatedAt:
       createdAt,
