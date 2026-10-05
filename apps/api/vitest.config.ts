@@ -30,6 +30,20 @@ export default defineConfig({
         "src/modules/**/domain/entities/**/*.ts",
         "src/modules/**/domain/value-objects/**/*.ts",
       ],
+
+      thresholds: {
+        statements:
+          90,
+
+        branches:
+          85,
+
+        functions:
+          90,
+
+        lines:
+          90,
+      },
     },
   },
 });
