@@ -1,103 +1,186 @@
-import { describe, expect, it } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+} from "vitest";
 
-import { User } from "../src/modules/users/domain/entities/user.entity";
+import {
+  User,
+} from "../src/modules/users/domain/entities/user.entity";
 
-describe("User Entity", () => {
-  it("changes full name", () => {
-    const user = User.restore({
-      id: "user-1",
+import {
+  Email,
+} from "../src/modules/users/domain/value-objects/email.vo";
 
-      email: "alice@example.com",
-
-      passwordHash: "hash",
-
-      fullName: "Alice",
-
-      role: "USER",
-
-      status: "ACTIVE",
-
-      createdAt: new Date(),
-
-      updatedAt: new Date(),
-    });
-
-    user.changeFullName("  Alice Smith  ");
-
-    expect(user.fullName).toBe("Alice Smith");
+function restoreUser(
+  status:
+    | "ACTIVE"
+    | "INACTIVE"
+    | "BLOCKED" =
+    "ACTIVE",
+): User {
+  return User.restore({
+    id: "user-1",
+    email:
+      Email.create(
+        "alice@example.com",
+      ),
+    passwordHash:
+      "hash",
+    fullName:
+      "Alice",
+    role:
+      "USER",
+    status,
+    createdAt:
+      new Date(
+        "2026-01-01T00:00:00.000Z",
+      ),
+    updatedAt:
+      new Date(
+        "2026-01-01T00:00:00.000Z",
+      ),
   });
+}
 
-  it("rejects invalid full name", () => {
-    const user = User.restore({
-      id: "user-1",
+describe(
+  "User Entity",
+  () => {
+    it(
+      "creates a new active user with defaults",
+      () => {
+        const now =
+          new Date(
+            "2026-01-01T00:00:00.000Z",
+          );
 
-      email: "alice@example.com",
+        const user =
+          User.create({
+            id:
+              "user-1",
+            email:
+              Email.create(
+                "alice@example.com",
+              ),
+            passwordHash:
+              "hash",
+            fullName:
+              "  Alice  ",
+            now,
+          });
 
-      passwordHash: "hash",
+        expect(
+          user.id,
+        ).toBe(
+          "user-1",
+        );
 
-      fullName: "Alice",
+        expect(
+          user.fullName,
+        ).toBe(
+          "Alice",
+        );
 
-      role: "USER",
+        expect(
+          user.role,
+        ).toBe(
+          "USER",
+        );
 
-      status: "ACTIVE",
+        expect(
+          user.status,
+        ).toBe(
+          "ACTIVE",
+        );
 
-      createdAt: new Date(),
+        expect(
+          user.createdAt,
+        ).toEqual(
+          now,
+        );
 
-      updatedAt: new Date(),
-    });
-
-    expect(() => user.changeFullName("A")).toThrow(
-      "Full name must be between 2 and 100 characters",
+        expect(
+          user.updatedAt,
+        ).toEqual(
+          now,
+        );
+      },
     );
-  });
 
-  it("blocks user", () => {
-    const user = User.restore({
-      id: "user-1",
+    it(
+      "changes full name",
+      () => {
+        const user =
+          restoreUser();
 
-      email: "alice@example.com",
+        user.changeFullName(
+          "  Alice Smith  ",
+        );
 
-      passwordHash: "hash",
+        expect(
+          user.fullName,
+        ).toBe(
+          "Alice Smith",
+        );
+      },
+    );
 
-      fullName: "Alice",
+    it(
+      "rejects invalid full name",
+      () => {
+        const user =
+          restoreUser();
 
-      role: "USER",
+        expect(() =>
+          user.changeFullName(
+            "A",
+          ),
+        ).toThrow(
+          "Full name must be between 2 and 100 characters",
+        );
+      },
+    );
 
-      status: "ACTIVE",
+    it(
+      "blocks user",
+      () => {
+        const user =
+          restoreUser();
 
-      createdAt: new Date(),
+        user.block();
 
-      updatedAt: new Date(),
-    });
+        expect(
+          user.status,
+        ).toBe(
+          "BLOCKED",
+        );
 
-    user.block();
+        expect(
+          user.isActive(),
+        ).toBe(false);
+      },
+    );
 
-    expect(user.status).toBe("BLOCKED");
+    it(
+      "activates user",
+      () => {
+        const user =
+          restoreUser(
+            "BLOCKED",
+          );
 
-    expect(user.isActive()).toBe(false);
-  });
+        user.activate();
 
-  it("activates user", () => {
-    const user = User.restore({
-      id: "user-1",
+        expect(
+          user.status,
+        ).toBe(
+          "ACTIVE",
+        );
 
-      email: "alice@example.com",
-
-      passwordHash: "hash",
-
-      fullName: "Alice",
-
-      role: "USER",
-
-      status: "BLOCKED",
-
-      createdAt: new Date(),
-
-      updatedAt: new Date(),
-    });
-
-    user.activate();
-
-    expect(user.status).toBe("ACTIVE");
-  });
-});
+        expect(
+          user.isActive(),
+        ).toBe(true);
+      },
+    );
+  },
+);
