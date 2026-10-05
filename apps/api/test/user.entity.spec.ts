@@ -49,6 +49,8 @@ function restoreUser(
     role:
       "USER",
     status,
+    version:
+      0,
     createdAt:
       ORIGINAL,
     updatedAt:
@@ -105,6 +107,10 @@ describe(
         );
 
         expect(
+          user.version,
+        ).toBe(0);
+
+        expect(
           user.createdAt,
         ).toEqual(
           ORIGINAL,
@@ -134,6 +140,10 @@ describe(
         ).toBe(
           "Alice Smith",
         );
+
+        expect(
+          user.version,
+        ).toBe(0);
 
         expect(
           user.updatedAt,
