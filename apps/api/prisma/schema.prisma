@@ -52,3 +52,21 @@ enum UserStatus {
   INACTIVE
   BLOCKED
 }
+
+model OutboxEvent {
+  id            String   @id @default(cuid())
+  eventName     String
+  payload       Json
+  occurredAt    DateTime
+  processedAt   DateTime?
+  processingAt  DateTime?
+  nextAttemptAt DateTime @default(now())
+  attempts      Int      @default(0)
+  lastError     String?
+  failedAt      DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([processedAt, failedAt, nextAttemptAt])
+  @@index([processingAt])
+  @@index([createdAt])
+}
