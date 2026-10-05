@@ -19,6 +19,8 @@ export interface UserPersistenceRecord {
 
   status: UserStatus;
 
+  version: number;
+
   createdAt: Date;
 
   updatedAt: Date;
@@ -36,6 +38,8 @@ export interface UserPersistenceData {
   role: UserRole;
 
   status: UserStatus;
+
+  version: number;
 
   createdAt: Date;
 
@@ -57,6 +61,8 @@ export class UserMapper {
 
       status: record.status,
 
+      version: record.version,
+
       createdAt: record.createdAt,
 
       updatedAt: record.updatedAt,
@@ -76,6 +82,8 @@ export class UserMapper {
       role: user.role,
 
       status: user.status,
+
+      version: user.version,
 
       createdAt: user.createdAt,
 

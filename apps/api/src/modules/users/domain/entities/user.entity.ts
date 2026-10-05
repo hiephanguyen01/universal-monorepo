@@ -14,6 +14,7 @@ export interface UserProps {
   fullName: string;
   role: UserRole;
   status: UserStatus;
+  version: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +41,7 @@ export class User {
       fullName,
       role: input.role ?? "USER",
       status: "ACTIVE",
+      version: 0,
       createdAt: input.now,
       updatedAt: input.now,
     });
@@ -61,6 +63,10 @@ export class User {
 
   get passwordHash(): string {
     return this.props.passwordHash;
+  }
+
+  get version(): number {
+    return this.props.version;
   }
 
   get fullName(): string {

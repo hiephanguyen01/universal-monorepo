@@ -2,8 +2,9 @@ import { Injectable } from "@nestjs/common";
 
 import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 
+import { Prisma } from "@/generated/prisma/client";
+import { UserVersionConflictError } from "../application/errors/user-version-conflict.error";
 import type { User } from "../domain/entities/user.entity";
-
 import type {
   FindUsersInput,
   UserRepository,
@@ -78,26 +79,43 @@ export class PrismaUserRepository implements UserRepository {
   async save(user: User): Promise<User> {
     const data = UserMapper.toPersistence(user);
 
-    const record = await this.prisma.user.update({
-      where: {
-        id: data.id,
-      },
+    try {
+      const record = await this.prisma.user.update({
+        where: {
+          id: data.id,
 
-      data: {
-        email: data.email,
+          version: data.version,
+        },
 
-        passwordHash: data.passwordHash,
+        data: {
+          email: data.email,
 
-        fullName: data.fullName,
+          passwordHash: data.passwordHash,
 
-        role: data.role,
+          fullName: data.fullName,
 
-        status: data.status,
+          role: data.role,
 
-        updatedAt: data.updatedAt,
-      },
-    });
+          status: data.status,
 
-    return UserMapper.toDomain(record);
+          updatedAt: data.updatedAt,
+
+          version: {
+            increment: 1,
+          },
+        },
+      });
+
+      return UserMapper.toDomain(record);
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        throw new UserVersionConflictError();
+      }
+
+      throw error;
+    }
   }
 }
