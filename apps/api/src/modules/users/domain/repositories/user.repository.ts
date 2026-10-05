@@ -1,7 +1,7 @@
 import type { User } from "../entities/user.entity";
 
 import type { Email } from "../value-objects/email.vo";
-import { UserId } from "../value-objects/user-id.vo";
+import type { UserId } from "../value-objects/user-id.vo";
 
 export interface FindUsersInput {
   skip: number;
