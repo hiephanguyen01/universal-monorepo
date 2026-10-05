@@ -60,5 +60,8 @@ jobs:
       - name: Integration test
         run: pnpm test:integration
 
+      - name: E2E test
+        run: pnpm test:e2e
+
       - name: Build
         run: pnpm build
