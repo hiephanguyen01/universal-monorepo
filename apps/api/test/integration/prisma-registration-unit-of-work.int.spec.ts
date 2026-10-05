@@ -30,7 +30,7 @@ import {
 import {
   clearDatabase,
   createTestPrisma,
-} from "./helpers/test-database";
+} from "../helpers/test-database";
 
 function createUser(
   id: string,
