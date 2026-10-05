@@ -19,6 +19,7 @@ export interface LoginOutput {
     fullName: string;
     role: string;
     status: string;
+    version: number;
     createdAt: string;
     updatedAt: string;
   };
@@ -86,6 +87,7 @@ export class LoginUseCase {
         fullName: user.fullName,
         role: user.role,
         status: user.status,
+        version: user.version,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
       },
