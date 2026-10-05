@@ -1,6 +1,6 @@
 import { ForbiddenError } from "@/common/errors";
 import type { UserRole } from "@/modules/users/domain/entities/user.entity";
-import { UserId } from "../../domain/value-objects/user-id.vo";
+import type { UserId } from "../../domain/value-objects/user-id.vo";
 
 export interface UserActor {
   id: UserId;
