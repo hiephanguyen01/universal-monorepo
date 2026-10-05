@@ -11,6 +11,9 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["test/**/*.spec.ts"],
-    exclude: ["test/integration/**/*.int.spec.ts"],
+    exclude: [
+      "test/integration/**/*.int.spec.ts",
+      "test/e2e/**/*.e2e.spec.ts",
+    ],
   },
 });
