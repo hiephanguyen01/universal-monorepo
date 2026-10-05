@@ -1,8 +1,14 @@
 import { NotFoundError } from "@/common/errors";
 
+import type { UserRole } from "../../domain/entities/user.entity";
 import type { UserRepository } from "../../domain/repositories/user.repository";
 import { UserId } from "../../domain/value-objects/user-id.vo";
-import { UserAccessPolicy, UserActor } from "../policies/user-access.policy";
+import { UserAccessPolicy } from "../policies/user-access.policy";
+
+export interface UpdateUserActorInput {
+  id: string;
+  role: UserRole;
+}
 
 export interface UpdateUserProfileInput {
   fullName: string;
@@ -21,18 +27,26 @@ export interface UpdateUserProfileOutput {
 export class UpdateUserProfileUseCase {
   constructor(
     private readonly users: UserRepository,
-
     private readonly accessPolicy: UserAccessPolicy,
   ) {}
 
   async execute(
-    actor: UserActor,
+    actor: UpdateUserActorInput,
     targetUserId: string,
     input: UpdateUserProfileInput,
   ): Promise<UpdateUserProfileOutput> {
-    this.accessPolicy.assertCanUpdateProfile(actor, targetUserId);
+    const actorId = UserId.create(actor.id);
+    const targetId = UserId.create(targetUserId);
 
-    const user = await this.users.findById(UserId.create(targetUserId));
+    this.accessPolicy.assertCanUpdateProfile(
+      {
+        id: actorId,
+        role: actor.role,
+      },
+      targetId,
+    );
+
+    const user = await this.users.findById(targetId);
 
     if (!user) {
       throw new NotFoundError("User not found");
@@ -44,17 +58,11 @@ export class UpdateUserProfileUseCase {
 
     return {
       id: savedUser.id.value,
-
       email: savedUser.email.value,
-
       fullName: savedUser.fullName,
-
       role: savedUser.role,
-
       status: savedUser.status,
-
       createdAt: savedUser.createdAt.toISOString(),
-
       updatedAt: savedUser.updatedAt.toISOString(),
     };
   }
