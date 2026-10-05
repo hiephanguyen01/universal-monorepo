@@ -1,4 +1,5 @@
 import { NotFoundError } from "@/common/errors";
+import type { Clock } from "@/common/ports/clock.port";
 
 import type { UserRole } from "../../domain/entities/user.entity";
 import type { UserRepository } from "../../domain/repositories/user.repository";
@@ -28,6 +29,7 @@ export class UpdateUserProfileUseCase {
   constructor(
     private readonly users: UserRepository,
     private readonly accessPolicy: UserAccessPolicy,
+    private readonly clock: Clock,
   ) {}
 
   async execute(
@@ -52,7 +54,7 @@ export class UpdateUserProfileUseCase {
       throw new NotFoundError("User not found");
     }
 
-    user.changeFullName(input.fullName);
+    user.changeFullName(input.fullName, this.clock.now());
 
     const savedUser = await this.users.save(user);
 
