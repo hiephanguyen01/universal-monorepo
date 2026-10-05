@@ -6,6 +6,7 @@ import type {
   CreateRefreshTokenInput,
   RefreshTokenRecord,
   RefreshTokenRepository,
+  RotateRefreshTokenInput,
 } from "../src/modules/auth/application/ports/refresh-token.repository";
 import type {
   AccessTokenPayload,
@@ -248,6 +249,44 @@ class InMemoryRefreshTokenRepository
     }
 
     return Promise.resolve();
+  }
+
+  rotate(
+    input: RotateRefreshTokenInput,
+  ): Promise<boolean> {
+    const current =
+      this.items.get(
+        input.currentSessionId,
+      );
+
+    if (
+      !current ||
+      current.revokedAt
+    ) {
+      return Promise.resolve(
+        false,
+      );
+    }
+
+    current.revokedAt =
+      new Date();
+
+    const next:
+      RefreshTokenRecord = {
+      ...input.nextSession,
+      revokedAt: null,
+      createdAt:
+        new Date(),
+    };
+
+    this.items.set(
+      next.id,
+      next,
+    );
+
+    return Promise.resolve(
+      true,
+    );
   }
 }
 
