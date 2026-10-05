@@ -1,4 +1,7 @@
-import { ID_GENERATOR } from "@/common/common.tokens";
+import { CommonModule } from "@/common/common.module";
+import { CLOCK, ID_GENERATOR } from "@/common/common.tokens";
+import type { Clock } from "@/common/ports/clock.port";
+import type { IdGenerator } from "@/common/ports/id-generator.port";
 import { PrismaModule } from "@/infrastructure/prisma/prisma.module";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import { UsersPersistenceModule } from "@/modules/users/infrastructure/users-persistence.module";
@@ -7,15 +10,12 @@ import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import type { PasswordHasher } from "./application/ports/password-hasher.port";
 import type { RefreshTokenRepository } from "./application/ports/refresh-token.repository";
+import type { RegistrationUnitOfWork } from "./application/ports/registration-unit-of-work.port";
 import type { TokenService } from "./application/ports/token-service.port";
 import { LoginUseCase } from "./application/use-cases/login.use-case";
 import { LogoutUseCase } from "./application/use-cases/logout.use-case";
 import { RefreshTokenUseCase } from "./application/use-cases/refresh-token.use-case";
 import { RegisterUseCase } from "./application/use-cases/register.use-case";
-
-import { UuidIdGenerator } from "@/common/infrastructure/id/uuid-id-generator";
-import { IdGenerator } from "@/common/ports/id-generator.port";
-import { RegistrationUnitOfWork } from "./application/ports/registration-unit-of-work.port";
 import {
   PASSWORD_HASHER,
   REFRESH_TOKEN_REPOSITORY,
@@ -32,7 +32,12 @@ import { PermissionsGuard } from "./presentation/guards/permissions.guard";
 import { RolesGuard } from "./presentation/guards/roles.guard";
 
 @Module({
-  imports: [JwtModule.register({}), PrismaModule, UsersPersistenceModule],
+  imports: [
+    CommonModule,
+    JwtModule.register({}),
+    PrismaModule,
+    UsersPersistenceModule,
+  ],
   controllers: [AuthController],
   providers: [
     {
@@ -48,13 +53,7 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
       useClass: PrismaRefreshTokenRepository,
     },
     {
-      provide: ID_GENERATOR,
-
-      useClass: UuidIdGenerator,
-    },
-    {
       provide: REGISTRATION_UNIT_OF_WORK,
-
       useClass: PrismaRegistrationUnitOfWork,
     },
     {
@@ -65,6 +64,7 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
         TOKEN_SERVICE,
         REGISTRATION_UNIT_OF_WORK,
         ID_GENERATOR,
+        CLOCK,
       ],
       useFactory: (
         users: UserRepository,
@@ -72,6 +72,7 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
         tokenService: TokenService,
         registrationUnitOfWork: RegistrationUnitOfWork,
         idGenerator: IdGenerator,
+        clock: Clock,
       ) =>
         new RegisterUseCase(
           users,
@@ -79,6 +80,7 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
           tokenService,
           registrationUnitOfWork,
           idGenerator,
+          clock,
         ),
     },
     {
