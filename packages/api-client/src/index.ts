@@ -33,9 +33,7 @@ type RequestOptions = RequestInit & {
 };
 
 export class ApiClient {
-  private refreshPromise:
-    Promise<boolean> | null =
-    null;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor(
     private readonly baseUrl: string,
@@ -51,64 +49,100 @@ export class ApiClient {
     headers.set("Content-Type", "application/json");
 
     if (options.auth !== false) {
-      const accessToken = await this.tokenStorage.getAccessToken();
+      const accessToken =
+        await this.tokenStorage.getAccessToken();
 
       if (accessToken) {
-        headers.set("Authorization", `Bearer ${accessToken}`);
+        headers.set(
+          "Authorization",
+          `Bearer ${accessToken}`,
+        );
       }
     }
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers,
-    });
+    const response = await fetch(
+      `${this.baseUrl}${path}`,
+      {
+        ...options,
+        headers,
+      },
+    );
 
     if (
       response.status === 401 &&
       options.auth !== false &&
       options.retry !== false
     ) {
-      const refreshed = await this.refresh();
+      const refreshed =
+        await this.refresh();
 
       if (refreshed) {
-        return this.request<T>(path, {
-          ...options,
-          retry: false,
-        });
+        return this.request<T>(
+          path,
+          {
+            ...options,
+            retry: false,
+          },
+        );
       }
     }
 
-    const payload = (await response.json().catch(() => null)) as any;
+    const payload =
+      (await response
+        .json()
+        .catch(() => null)) as any;
 
     if (!response.ok) {
       throw new ApiClientError(
         response.status,
-        payload?.error?.code ?? "HTTP_ERROR",
-        payload?.error?.message ?? "Request failed",
+        payload?.error?.code ??
+          "HTTP_ERROR",
+        payload?.error?.message ??
+          "Request failed",
       );
     }
 
     return payload?.data as T;
   }
 
-  private async refresh(): Promise<boolean> {
-    const refreshToken = await this.tokenStorage.getRefreshToken();
+  private refresh(): Promise<boolean> {
+    if (!this.refreshPromise) {
+      this.refreshPromise =
+        this.performRefresh()
+          .finally(() => {
+            this.refreshPromise =
+              null;
+          });
+    }
+
+    return this.refreshPromise;
+  }
+
+  private async performRefresh(): Promise<boolean> {
+    const refreshToken =
+      await this.tokenStorage.getRefreshToken();
 
     if (!refreshToken) {
       return false;
     }
 
     try {
-      const tokens = await this.request<AuthTokens>("/auth/refresh", {
-        method: "POST",
-        auth: false,
-        retry: false,
-        body: JSON.stringify({
-          refreshToken,
-        }),
-      });
+      const tokens =
+        await this.request<AuthTokens>(
+          "/auth/refresh",
+          {
+            method: "POST",
+            auth: false,
+            retry: false,
+            body: JSON.stringify({
+              refreshToken,
+            }),
+          },
+        );
 
-      await this.tokenStorage.setTokens(tokens);
+      await this.tokenStorage.setTokens(
+        tokens,
+      );
 
       return true;
     } catch {
@@ -119,44 +153,71 @@ export class ApiClient {
   }
 
   readonly auth = {
-    register: async (input: RegisterInput) => {
-      const session = await this.request<AuthSession>("/auth/register", {
-        method: "POST",
-        auth: false,
-        body: JSON.stringify(input),
-      });
+    register: async (
+      input: RegisterInput,
+    ) => {
+      const session =
+        await this.request<AuthSession>(
+          "/auth/register",
+          {
+            method: "POST",
+            auth: false,
+            body: JSON.stringify(
+              input,
+            ),
+          },
+        );
 
-      await this.tokenStorage.setTokens(session);
+      await this.tokenStorage.setTokens(
+        session,
+      );
 
       return session;
     },
 
-    login: async (input: LoginInput) => {
-      const session = await this.request<AuthSession>("/auth/login", {
-        method: "POST",
-        auth: false,
-        body: JSON.stringify(input),
-      });
+    login: async (
+      input: LoginInput,
+    ) => {
+      const session =
+        await this.request<AuthSession>(
+          "/auth/login",
+          {
+            method: "POST",
+            auth: false,
+            body: JSON.stringify(
+              input,
+            ),
+          },
+        );
 
-      await this.tokenStorage.setTokens(session);
+      await this.tokenStorage.setTokens(
+        session,
+      );
 
       return session;
     },
 
     logout: async () => {
-      const refreshToken = await this.tokenStorage.getRefreshToken();
+      const refreshToken =
+        await this.tokenStorage.getRefreshToken();
 
-      if (refreshToken) {
-        await this.request<null>("/auth/logout", {
-          method: "POST",
-          auth: false,
-          body: JSON.stringify({
-            refreshToken,
-          }),
-        });
+      try {
+        if (refreshToken) {
+          await this.request<null>(
+            "/auth/logout",
+            {
+              method: "POST",
+              auth: false,
+              retry: false,
+              body: JSON.stringify({
+                refreshToken,
+              }),
+            },
+          );
+        }
+      } finally {
+        await this.tokenStorage.clear();
       }
-
-      await this.tokenStorage.clear();
     },
   };
 
@@ -167,36 +228,65 @@ export class ApiClient {
         pageSize?: number;
       } = {},
     ) => {
-      const searchParams = new URLSearchParams();
+      const searchParams =
+        new URLSearchParams();
 
       if (params.page) {
-        searchParams.set("page", String(params.page));
+        searchParams.set(
+          "page",
+          String(params.page),
+        );
       }
 
       if (params.pageSize) {
-        searchParams.set("pageSize", String(params.pageSize));
+        searchParams.set(
+          "pageSize",
+          String(params.pageSize),
+        );
       }
 
-      const query = searchParams.toString();
+      const query =
+        searchParams.toString();
 
-      return this.request<PaginatedResult<UserDto>>(
+      return this.request<
+        PaginatedResult<UserDto>
+      >(
         `/users${query ? `?${query}` : ""}`,
       );
     },
 
-    me: () => this.request<UserDto>("/users/me"),
+    me: () =>
+      this.request<UserDto>(
+        "/users/me",
+      ),
 
-    updateMe: (input: UpdateProfileInput) =>
-      this.request<UserDto>("/users/me", {
-        method: "PATCH",
-        body: JSON.stringify(input),
-      }),
+    updateMe: (
+      input: UpdateProfileInput,
+    ) =>
+      this.request<UserDto>(
+        "/users/me",
+        {
+          method: "PATCH",
+          body: JSON.stringify(
+            input,
+          ),
+        },
+      ),
 
-    updateById: (userId: string, input: UpdateProfileInput) =>
-      this.request<UserDto>(`/users/${encodeURIComponent(userId)}`, {
-        method: "PATCH",
-
-        body: JSON.stringify(input),
-      }),
+    updateById: (
+      userId: string,
+      input: UpdateProfileInput,
+    ) =>
+      this.request<UserDto>(
+        `/users/${encodeURIComponent(
+          userId,
+        )}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(
+            input,
+          ),
+        },
+      ),
   };
 }
