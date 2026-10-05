@@ -36,7 +36,7 @@ export interface CreateUserProps {
 
   role?: UserRole;
 
-  now?: Date;
+  now: Date;
 }
 
 export class User {
@@ -45,7 +45,7 @@ export class User {
   static create(input: CreateUserProps): User {
     const fullName = User.normalizeFullName(input.fullName);
 
-    const now = input.now ?? new Date();
+    const now = input.now;
 
     return new User({
       id: input.id,
@@ -104,10 +104,10 @@ export class User {
     return this.props.updatedAt;
   }
 
-  changeFullName(fullName: string): void {
+  changeFullName(fullName: string, now: Date): void {
     this.props.fullName = User.normalizeFullName(fullName);
 
-    this.touch();
+    this.touch(now);
   }
 
   block(): void {
