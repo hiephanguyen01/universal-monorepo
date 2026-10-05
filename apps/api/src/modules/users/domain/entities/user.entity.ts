@@ -1,7 +1,7 @@
 import { InvalidUserFullNameError } from "../errors/invalid-user-full-name.error";
 
 import type { Email } from "../value-objects/email.vo";
-import { UserId } from "../value-objects/user-id.vo";
+import type { UserId } from "../value-objects/user-id.vo";
 
 export type UserRole = "USER" | "ADMIN";
 
