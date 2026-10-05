@@ -27,7 +27,9 @@ export default defineConfig({
         "src/modules/**/application/use-cases/**/*.ts",
         "src/modules/**/application/policies/**/*.ts",
         "src/modules/**/application/mappers/**/*.ts",
+        "src/modules/**/application/handlers/**/*.ts",
         "src/modules/**/domain/entities/**/*.ts",
+        "src/modules/**/domain/events/**/*.ts",
         "src/modules/**/domain/value-objects/**/*.ts",
       ],
 
