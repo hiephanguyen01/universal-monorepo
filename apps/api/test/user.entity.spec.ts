@@ -16,6 +16,16 @@ import {
   UserId,
 } from "../src/modules/users/domain/value-objects/user-id.vo";
 
+const ORIGINAL =
+  new Date(
+    "2026-01-01T00:00:00.000Z",
+  );
+
+const LATER =
+  new Date(
+    "2026-10-05T10:00:00.000Z",
+  );
+
 function restoreUser(
   status:
     | "ACTIVE"
@@ -40,13 +50,9 @@ function restoreUser(
       "USER",
     status,
     createdAt:
-      new Date(
-        "2026-01-01T00:00:00.000Z",
-      ),
+      ORIGINAL,
     updatedAt:
-      new Date(
-        "2026-01-01T00:00:00.000Z",
-      ),
+      ORIGINAL,
   });
 }
 
@@ -54,19 +60,14 @@ describe(
   "User Entity",
   () => {
     it(
-      "creates a new active user with defaults",
+      "creates a new active user with explicit time",
       () => {
-        const now =
-          new Date(
-            "2026-01-01T00:00:00.000Z",
-          );
-
         const user =
           User.create({
             id:
-      UserId.create(
-        "user-1",
-      ),
+              UserId.create(
+                "user-1",
+              ),
             email:
               Email.create(
                 "alice@example.com",
@@ -75,7 +76,8 @@ describe(
               "hash",
             fullName:
               "  Alice  ",
-            now,
+            now:
+              ORIGINAL,
           });
 
         expect(
@@ -105,31 +107,57 @@ describe(
         expect(
           user.createdAt,
         ).toEqual(
-          now,
+          ORIGINAL,
         );
 
         expect(
           user.updatedAt,
         ).toEqual(
-          now,
+          ORIGINAL,
         );
       },
     );
 
     it(
-      "changes full name",
+      "changes full name and updates timestamp",
       () => {
         const user =
           restoreUser();
 
         user.changeFullName(
           "  Alice Smith  ",
+          LATER,
         );
 
         expect(
           user.fullName,
         ).toBe(
           "Alice Smith",
+        );
+
+        expect(
+          user.updatedAt,
+        ).toEqual(
+          LATER,
+        );
+      },
+    );
+
+    it(
+      "does not update timestamp when full name is unchanged",
+      () => {
+        const user =
+          restoreUser();
+
+        user.changeFullName(
+          "  Alice  ",
+          LATER,
+        );
+
+        expect(
+          user.updatedAt,
+        ).toEqual(
+          ORIGINAL,
         );
       },
     );
@@ -143,6 +171,7 @@ describe(
         expect(() =>
           user.changeFullName(
             "A",
+            LATER,
           ),
         ).toThrow(
           "Full name must be between 2 and 100 characters",
@@ -156,7 +185,9 @@ describe(
         const user =
           restoreUser();
 
-        user.block();
+        user.block(
+          LATER,
+        );
 
         expect(
           user.status,
@@ -165,8 +196,34 @@ describe(
         );
 
         expect(
+          user.updatedAt,
+        ).toEqual(
+          LATER,
+        );
+
+        expect(
           user.isActive(),
         ).toBe(false);
+      },
+    );
+
+    it(
+      "does not touch blocked user again",
+      () => {
+        const user =
+          restoreUser(
+            "BLOCKED",
+          );
+
+        user.block(
+          LATER,
+        );
+
+        expect(
+          user.updatedAt,
+        ).toEqual(
+          ORIGINAL,
+        );
       },
     );
 
@@ -178,12 +235,20 @@ describe(
             "BLOCKED",
           );
 
-        user.activate();
+        user.activate(
+          LATER,
+        );
 
         expect(
           user.status,
         ).toBe(
           "ACTIVE",
+        );
+
+        expect(
+          user.updatedAt,
+        ).toEqual(
+          LATER,
         );
 
         expect(
