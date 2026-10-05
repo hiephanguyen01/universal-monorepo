@@ -9,33 +9,21 @@ export type UserStatus = "ACTIVE" | "INACTIVE" | "BLOCKED";
 
 export interface UserProps {
   id: UserId;
-
   email: Email;
-
   passwordHash: string;
-
   fullName: string;
-
   role: UserRole;
-
   status: UserStatus;
-
   createdAt: Date;
-
   updatedAt: Date;
 }
 
 export interface CreateUserProps {
   id: UserId;
-
   email: Email;
-
   passwordHash: string;
-
   fullName: string;
-
   role?: UserRole;
-
   now: Date;
 }
 
@@ -45,24 +33,15 @@ export class User {
   static create(input: CreateUserProps): User {
     const fullName = User.normalizeFullName(input.fullName);
 
-    const now = input.now;
-
     return new User({
       id: input.id,
-
       email: input.email,
-
       passwordHash: input.passwordHash,
-
       fullName,
-
       role: input.role ?? "USER",
-
       status: "ACTIVE",
-
-      createdAt: now,
-
-      updatedAt: now,
+      createdAt: input.now,
+      updatedAt: input.now,
     });
   }
 
@@ -105,29 +84,32 @@ export class User {
   }
 
   changeFullName(fullName: string, now: Date): void {
-    this.props.fullName = User.normalizeFullName(fullName);
+    const normalized = User.normalizeFullName(fullName);
 
+    if (normalized === this.props.fullName) {
+      return;
+    }
+
+    this.props.fullName = normalized;
     this.touch(now);
   }
 
-  block(): void {
+  block(now: Date): void {
     if (this.props.status === "BLOCKED") {
       return;
     }
 
     this.props.status = "BLOCKED";
-
-    this.touch();
+    this.touch(now);
   }
 
-  activate(): void {
+  activate(now: Date): void {
     if (this.props.status === "ACTIVE") {
       return;
     }
 
     this.props.status = "ACTIVE";
-
-    this.touch();
+    this.touch(now);
   }
 
   isActive(): boolean {
@@ -144,7 +126,7 @@ export class User {
     return normalized;
   }
 
-  private touch(): void {
-    this.props.updatedAt = new Date();
+  private touch(now: Date): void {
+    this.props.updatedAt = now;
   }
 }
