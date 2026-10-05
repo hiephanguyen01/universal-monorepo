@@ -1,8 +1,7 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import { Prisma } from "@/generated/prisma/client";
 import { PrismaService } from "@/infrastructure/prisma/prisma.service";
-import type { PrismaClient } from "@/generated/prisma/client";
 import { UserVersionConflictError } from "../application/errors/user-version-conflict.error";
 import type { User } from "../domain/entities/user.entity";
 import type {
@@ -17,12 +16,9 @@ import type { UserId } from "../domain/value-objects/user-id.vo";
 import { UserMapper } from "./mappers/user.mapper";
 
 @Injectable()
-type UserPrismaClient = Pick<PrismaClient, "user">;
-
 export class PrismaUserRepository implements UserRepository {
   constructor(
-    @Inject(PrismaService)
-    private readonly prisma: UserPrismaClient,
+    private readonly prisma: PrismaService,
   ) {}
 
   async findById(id: UserId): Promise<User | null> {
