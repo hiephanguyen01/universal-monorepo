@@ -57,6 +57,9 @@ jobs:
       - name: Unit test
         run: pnpm test
 
+      - name: Coverage
+        run: pnpm test:coverage
+
       - name: Integration test
         run: pnpm test:integration
 
