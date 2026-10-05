@@ -1,17 +1,40 @@
-import { describe, expect, it } from "vitest";
-import { GetCurrentUserUseCase } from "../src/modules/users/application/use-cases/get-current-user.use-case";
-import { ListUsersUseCase } from "../src/modules/users/application/use-cases/list-users.use-case";
-import { UpdateCurrentUserUseCase } from "../src/modules/users/application/use-cases/update-current-user.use-case";
-import { User } from "../src/modules/users/domain/entities/user.entity";
+import {
+  describe,
+  expect,
+  it,
+} from "vitest";
+
+import {
+  GetCurrentUserUseCase,
+} from "../src/modules/users/application/use-cases/get-current-user.use-case";
+
+import {
+  ListUsersUseCase,
+} from "../src/modules/users/application/use-cases/list-users.use-case";
+
+import {
+  UpdateCurrentUserUseCase,
+} from "../src/modules/users/application/use-cases/update-current-user.use-case";
+
+import {
+  User,
+} from "../src/modules/users/domain/entities/user.entity";
+
 import type {
   FindUsersInput,
-  UpdateUserProfileInput,
   UserRepository,
 } from "../src/modules/users/domain/repositories/user.repository";
 
-class InMemoryUserRepository implements UserRepository {
+import {
+  Email,
+} from "../src/modules/users/domain/value-objects/email.vo";
+
+class InMemoryUserRepository
+  implements UserRepository
+{
   constructor(
-    private readonly users: User[],
+    private readonly users:
+      User[],
   ) {}
 
   findById(
@@ -26,12 +49,14 @@ class InMemoryUserRepository implements UserRepository {
   }
 
   findByEmail(
-    email: string,
+    email: Email,
   ): Promise<User | null> {
     return Promise.resolve(
       this.users.find(
         (user) =>
-          user.email === email,
+          user.email.equals(
+            email,
+          ),
       ) ?? null,
     );
   }
@@ -54,20 +79,25 @@ class InMemoryUserRepository implements UserRepository {
     );
   }
 
-  create(): Promise<User> {
-    throw new Error(
-      "Not implemented",
+  create(
+    user: User,
+  ): Promise<User> {
+    this.users.push(
+      user,
+    );
+
+    return Promise.resolve(
+      user,
     );
   }
 
-  async updateProfile(
-    id: string,
-    input: UpdateUserProfileInput,
+  save(
+    user: User,
   ): Promise<User> {
     const index =
       this.users.findIndex(
-        (user) =>
-          user.id === id,
+        (item) =>
+          item.id === user.id,
       );
 
     if (index < 0) {
@@ -76,64 +106,51 @@ class InMemoryUserRepository implements UserRepository {
       );
     }
 
-    const current =
-      this.users[index]!;
-
-    const updated =
-      new User({
-        ...current,
-        fullName:
-          input.fullName,
-        updatedAt:
-          new Date(),
-      });
-
     this.users[index] =
-      updated;
+      user;
 
-    return updated;
+    return Promise.resolve(
+      user,
+    );
   }
 }
 
-const user =
-  new User({
-    id: "user-1",
-    email:
-      "alice@example.com",
-    passwordHash:
-      "hashed-password",
-    fullName: "Alice",
-    role: "USER",
-    status: "ACTIVE",
-    createdAt:
-      new Date(
-        "2026-01-01T00:00:00.000Z",
-      ),
-    updatedAt:
-      new Date(
-        "2026-01-01T00:00:00.000Z",
-      ),
-  });
+function createUser(
+  input: {
+    id: string;
+    email: string;
+    fullName: string;
+    role:
+      | "USER"
+      | "ADMIN";
+    createdAt: string;
+  },
+): User {
+  const createdAt =
+    new Date(
+      input.createdAt,
+    );
 
-const admin =
-  new User({
-    id: "admin-1",
+  return User.restore({
+    id:
+      input.id,
     email:
-      "admin@example.com",
+      Email.create(
+        input.email,
+      ),
     passwordHash:
       "hashed-password",
-    fullName: "Admin",
-    role: "ADMIN",
-    status: "ACTIVE",
-    createdAt:
-      new Date(
-        "2026-01-02T00:00:00.000Z",
-      ),
+    fullName:
+      input.fullName,
+    role:
+      input.role,
+    status:
+      "ACTIVE",
+    createdAt,
     updatedAt:
-      new Date(
-        "2026-01-02T00:00:00.000Z",
-      ),
+      createdAt,
   });
+}
 
 describe(
   "user use cases",
@@ -141,6 +158,20 @@ describe(
     it(
       "returns the current user DTO",
       async () => {
+        const user =
+          createUser({
+            id:
+              "user-1",
+            email:
+              "alice@example.com",
+            fullName:
+              "Alice",
+            role:
+              "USER",
+            createdAt:
+              "2026-01-01T00:00:00.000Z",
+          });
+
         const useCase =
           new GetCurrentUserUseCase(
             new InMemoryUserRepository(
@@ -170,6 +201,20 @@ describe(
     it(
       "updates the current user's full name",
       async () => {
+        const user =
+          createUser({
+            id:
+              "user-1",
+            email:
+              "alice@example.com",
+            fullName:
+              "Alice",
+            role:
+              "USER",
+            createdAt:
+              "2026-01-01T00:00:00.000Z",
+          });
+
         const repository =
           new InMemoryUserRepository(
             [user],
@@ -185,12 +230,23 @@ describe(
             "user-1",
             {
               fullName:
-                "Alice Updated",
+                "  Alice Updated  ",
             },
           );
 
         expect(
           result.fullName,
+        ).toBe(
+          "Alice Updated",
+        );
+
+        expect(
+          (
+            await repository
+              .findById(
+                "user-1",
+              )
+          )?.fullName,
         ).toBe(
           "Alice Updated",
         );
@@ -200,6 +256,34 @@ describe(
     it(
       "returns paginated users",
       async () => {
+        const admin =
+          createUser({
+            id:
+              "admin-1",
+            email:
+              "admin@example.com",
+            fullName:
+              "Admin",
+            role:
+              "ADMIN",
+            createdAt:
+              "2026-01-02T00:00:00.000Z",
+          });
+
+        const user =
+          createUser({
+            id:
+              "user-1",
+            email:
+              "alice@example.com",
+            fullName:
+              "Alice",
+            role:
+              "USER",
+            createdAt:
+              "2026-01-01T00:00:00.000Z",
+          });
+
         const useCase =
           new ListUsersUseCase(
             new InMemoryUserRepository(
@@ -219,6 +303,12 @@ describe(
         expect(
           result.items,
         ).toHaveLength(1);
+
+        expect(
+          result.items[0]?.email,
+        ).toBe(
+          "admin@example.com",
+        );
 
         expect(
           result.meta,
