@@ -4,10 +4,6 @@ import {
   it,
 } from "vitest";
 
-import type {
-  Clock,
-} from "../src/common/ports/clock.port";
-
 import {
   GetCurrentUserUseCase,
 } from "../src/modules/users/application/use-cases/get-current-user.use-case";
@@ -41,18 +37,13 @@ import {
   UserId,
 } from "../src/modules/users/domain/value-objects/user-id.vo";
 
-class FakeClock
-  implements Clock
-{
-  constructor(
-    private readonly current:
-      Date,
-  ) {}
+import {
+  makeUser,
+} from "./factories/user.factory";
 
-  now(): Date {
-    return this.current;
-  }
-}
+import {
+  FakeClock,
+} from "./fakes/fake-clock";
 
 class InMemoryUserRepository
   implements UserRepository
@@ -188,25 +179,15 @@ function createUser(
       input.createdAt,
     );
 
-  return User.restore({
+  return makeUser({
     id:
-      UserId.create(
-        input.id,
-      ),
+      input.id,
     email:
-      Email.create(
-        input.email,
-      ),
-    passwordHash:
-      "hashed-password",
+      input.email,
     fullName:
       input.fullName,
     role:
       input.role,
-    status:
-      "ACTIVE",
-    version:
-      0,
     createdAt,
     updatedAt:
       createdAt,
