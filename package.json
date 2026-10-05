@@ -20,7 +20,10 @@
     "db:seed": "pnpm --filter @repo/api db:seed",
     "db:studio": "pnpm --filter @repo/api db:studio",
     "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "test:integration": "pnpm --filter @repo/api test:integration",
+    "docker:test:up": "docker compose --profile test up -d --wait postgres-test",
+    "docker:test:down": "docker compose --profile test stop postgres-test"
   },
   "devDependencies": {
     "prettier": "^3.0.0",
