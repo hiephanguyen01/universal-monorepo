@@ -337,6 +337,61 @@ describe(
     );
 
     it(
+      "does not increment version for a no-op profile update",
+      async () => {
+        const user =
+          createUser({
+            id:
+              "user-1",
+            email:
+              "alice@example.com",
+            fullName:
+              "Alice",
+            role:
+              "USER",
+            createdAt:
+              "2026-01-01T00:00:00.000Z",
+          });
+
+        const repository =
+          new InMemoryUserRepository(
+            [user],
+          );
+
+        const useCase =
+          new UpdateCurrentUserUseCase(
+            repository,
+            new FakeClock(
+              new Date(
+                "2026-10-05T10:00:00.000Z",
+              ),
+            ),
+          );
+
+        const result =
+          await useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "  Alice  ",
+              version:
+                0,
+            },
+          );
+
+        expect(
+          result.version,
+        ).toBe(0);
+
+        expect(
+          result.updatedAt,
+        ).toBe(
+          "2026-01-01T00:00:00.000Z",
+        );
+      },
+    );
+
+    it(
       "rejects a stale profile version",
       async () => {
         const user =
