@@ -6,6 +6,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Param,
   Patch,
   Query,
@@ -26,10 +27,21 @@ import { UpdateUserProfileUseCase } from "../../application/use-cases/update-use
 @UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(
-    private readonly getCurrentUser: GetCurrentUserUseCase,
-    private readonly listUsers: ListUsersUseCase,
-    private readonly updateCurrentUser: UpdateCurrentUserUseCase,
-    private readonly updateUserProfile: UpdateUserProfileUseCase,
+    @Inject(GetCurrentUserUseCase)
+    private readonly getCurrentUser:
+      GetCurrentUserUseCase,
+
+    @Inject(ListUsersUseCase)
+    private readonly listUsers:
+      ListUsersUseCase,
+
+    @Inject(UpdateCurrentUserUseCase)
+    private readonly updateCurrentUser:
+      UpdateCurrentUserUseCase,
+
+    @Inject(UpdateUserProfileUseCase)
+    private readonly updateUserProfile:
+      UpdateUserProfileUseCase,
   ) {}
 
   @Get()
