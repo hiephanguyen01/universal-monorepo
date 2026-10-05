@@ -217,7 +217,6 @@ export class RegisterUseCase {
       throw error;
     }
 
-
     return {
       accessToken,
 
