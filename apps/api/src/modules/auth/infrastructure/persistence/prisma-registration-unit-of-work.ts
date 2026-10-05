@@ -63,6 +63,29 @@ export class PrismaRegistrationUnitOfWork
                 },
               });
 
+            if (
+              input.events.length >
+              0
+            ) {
+              await tx.outboxEvent
+                .createMany({
+                  data:
+                    input.events.map(
+                      (event) => ({
+                        eventName:
+                          event.eventName,
+
+                        payload:
+                          event.toPrimitives() as
+                            Prisma.InputJsonObject,
+
+                        occurredAt:
+                          event.occurredAt,
+                      }),
+                    ),
+                });
+            }
+
             return UserMapper
               .toDomain(
                 userRecord,
