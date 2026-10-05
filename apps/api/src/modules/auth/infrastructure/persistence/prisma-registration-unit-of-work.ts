@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { Prisma } from "@/generated/prisma/client";
+import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 import type { PrismaClient } from "@/generated/prisma/client";
 
 import { UserMapper } from "@/modules/users/infrastructure/mappers/user.mapper";
@@ -15,7 +16,10 @@ type RegistrationPrismaClient = Pick<PrismaClient, "$transaction">;
 
 @Injectable()
 export class PrismaRegistrationUnitOfWork implements RegistrationUnitOfWork {
-  constructor(private readonly prisma: RegistrationPrismaClient) {}
+  constructor(
+    @Inject(PrismaService)
+    private readonly prisma: RegistrationPrismaClient,
+  ) {}
 
   async execute(input: RegisterTransactionInput) {
     try {
