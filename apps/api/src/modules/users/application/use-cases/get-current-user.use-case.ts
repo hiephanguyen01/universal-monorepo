@@ -1,35 +1,23 @@
 import { NotFoundError } from "@/common/errors";
+
 import type { UserRepository } from "../../domain/repositories/user.repository";
+
 import { UserId } from "../../domain/value-objects/user-id.vo";
 
-export interface GetCurrentUserOutput {
-  id: string;
-  email: string;
-  fullName: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { UserOutput } from "../dto/user-output";
+
+import { UserOutputMapper } from "../mappers/user-output.mapper";
 
 export class GetCurrentUserUseCase {
   constructor(private readonly users: UserRepository) {}
 
-  async execute(userId: string): Promise<GetCurrentUserOutput> {
+  async execute(userId: string): Promise<UserOutput> {
     const user = await this.users.findById(UserId.create(userId));
 
     if (!user) {
       throw new NotFoundError("User not found");
     }
 
-    return {
-      id: user.id.value,
-      email: user.email.value,
-      fullName: user.fullName,
-      role: user.role,
-      status: user.status,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
-    };
+    return UserOutputMapper.toOutput(user);
   }
 }

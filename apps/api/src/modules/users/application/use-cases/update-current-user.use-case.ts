@@ -3,19 +3,12 @@ import type { Clock } from "@/common/ports/clock.port";
 
 import type { UserRepository } from "../../domain/repositories/user.repository";
 import { UserId } from "../../domain/value-objects/user-id.vo";
+import type { UserOutput } from "../dto/user-output";
+
+import { UserOutputMapper } from "../mappers/user-output.mapper";
 
 export interface UpdateCurrentUserInput {
   fullName: string;
-}
-
-export interface UpdateCurrentUserOutput {
-  id: string;
-  email: string;
-  fullName: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export class UpdateCurrentUserUseCase {
@@ -27,7 +20,7 @@ export class UpdateCurrentUserUseCase {
   async execute(
     userId: string,
     input: UpdateCurrentUserInput,
-  ): Promise<UpdateCurrentUserOutput> {
+  ): Promise<UserOutput> {
     const user = await this.users.findById(UserId.create(userId));
 
     if (!user) {
@@ -37,15 +30,7 @@ export class UpdateCurrentUserUseCase {
     user.changeFullName(input.fullName, this.clock.now());
 
     const savedUser = await this.users.save(user);
-
-    return {
-      id: savedUser.id.value,
-      email: savedUser.email.value,
-      fullName: savedUser.fullName,
-      role: savedUser.role,
-      status: savedUser.status,
-      createdAt: savedUser.createdAt.toISOString(),
-      updatedAt: savedUser.updatedAt.toISOString(),
-    };
+    
+    return UserOutputMapper.toOutput(savedUser);
   }
 }

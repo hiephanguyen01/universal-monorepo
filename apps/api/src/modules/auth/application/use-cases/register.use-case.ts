@@ -1,7 +1,9 @@
 import { ConflictError } from "@/common/errors";
 import type { Clock } from "@/common/ports/clock.port";
 import type { IdGenerator } from "@/common/ports/id-generator.port";
+import { UserOutput } from "@/modules/users/application/dto/user-output";
 import { DuplicateUserEmailError } from "@/modules/users/application/errors/duplicate-user-email.error";
+import { UserOutputMapper } from "@/modules/users/application/mappers/user-output.mapper";
 import { User } from "@/modules/users/domain/entities/user.entity";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import { Email } from "@/modules/users/domain/value-objects/email.vo";
@@ -15,7 +17,13 @@ export interface RegisterInput {
   password: string;
   fullName: string;
 }
+export interface RegisterOutput {
+  accessToken: string;
 
+  refreshToken: string;
+
+  user: UserOutput;
+}
 export class RegisterUseCase {
   constructor(
     private readonly users: UserRepository,
@@ -26,7 +34,7 @@ export class RegisterUseCase {
     private readonly clock: Clock,
   ) {}
 
-  async execute(input: RegisterInput) {
+  async execute(input: RegisterInput): Promise<RegisterOutput> {
     const email = Email.create(input.email);
 
     const existingUser = await this.users.findByEmail(email);
@@ -81,16 +89,10 @@ export class RegisterUseCase {
 
     return {
       accessToken,
+
       refreshToken: generatedRefreshToken.token,
-      user: {
-        id: savedUser.id.value,
-        email: savedUser.email.value,
-        fullName: savedUser.fullName,
-        role: savedUser.role,
-        status: savedUser.status,
-        createdAt: savedUser.createdAt.toISOString(),
-        updatedAt: savedUser.updatedAt.toISOString(),
-      },
+
+      user: UserOutputMapper.toOutput(savedUser),
     };
   }
 }

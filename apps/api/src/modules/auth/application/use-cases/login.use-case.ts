@@ -1,4 +1,6 @@
 import { UnauthorizedError } from "@/common/errors";
+import { UserOutput } from "@/modules/users/application/dto/user-output";
+import { UserOutputMapper } from "@/modules/users/application/mappers/user-output.mapper";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import { Email } from "@/modules/users/domain/value-objects/email.vo";
 import type { PasswordHasher } from "../ports/password-hasher.port";
@@ -9,21 +11,13 @@ export interface LoginInput {
   email: string;
   password: string;
 }
-
 export interface LoginOutput {
   accessToken: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  };
-}
 
+  refreshToken: string;
+
+  user: UserOutput;
+}
 export class LoginUseCase {
   constructor(
     private readonly users: UserRepository,
@@ -79,16 +73,10 @@ export class LoginUseCase {
 
     return {
       accessToken,
+
       refreshToken: generatedRefreshToken.token,
-      user: {
-        id: user.id.value,
-        email: user.email.value,
-        fullName: user.fullName,
-        role: user.role,
-        status: user.status,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      },
+
+      user: UserOutputMapper.toOutput(user),
     };
   }
 }

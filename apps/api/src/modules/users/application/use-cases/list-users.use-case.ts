@@ -1,4 +1,6 @@
-import type { UserRepository } from "../../domain/repositories/user.repository";
+import { UserRepository } from "../../domain/repositories/user.repository";
+import { UserOutput } from "../dto/user-output";
+import { UserOutputMapper } from "../mappers/user-output.mapper";
 
 export interface ListUsersInput {
   page: number;
@@ -6,15 +8,8 @@ export interface ListUsersInput {
 }
 
 export interface ListUsersOutput {
-  items: Array<{
-    id: string;
-    email: string;
-    fullName: string;
-    role: string;
-    status: string;
-    createdAt: string;
-    updatedAt: string;
-  }>;
+  items: UserOutput[];
+
   meta: {
     page: number;
     pageSize: number;
@@ -37,20 +32,15 @@ export class ListUsersUseCase {
     ]);
 
     return {
-      items: users.map((user) => ({
-        id: user.id.value,
-        email: user.email.value,
-        fullName: user.fullName,
-        role: user.role,
-        status: user.status,
-        createdAt: user.createdAt.toISOString(),
-        updatedAt: user.updatedAt.toISOString(),
-      })),
+      items: users.map(UserOutputMapper.toOutput),
 
       meta: {
-      page: input.page,
+        page: input.page,
+
         pageSize: input.pageSize,
+
         total,
+
         totalPages: Math.ceil(total / input.pageSize),
       },
     };

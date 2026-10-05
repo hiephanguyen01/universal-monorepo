@@ -4,6 +4,8 @@ import type { Clock } from "@/common/ports/clock.port";
 import type { UserRole } from "../../domain/entities/user.entity";
 import type { UserRepository } from "../../domain/repositories/user.repository";
 import { UserId } from "../../domain/value-objects/user-id.vo";
+import { UserOutput } from "../dto/user-output";
+import { UserOutputMapper } from "../mappers/user-output.mapper";
 import { UserAccessPolicy } from "../policies/user-access.policy";
 
 export interface UpdateUserActorInput {
@@ -13,16 +15,6 @@ export interface UpdateUserActorInput {
 
 export interface UpdateUserProfileInput {
   fullName: string;
-}
-
-export interface UpdateUserProfileOutput {
-  id: string;
-  email: string;
-  fullName: string;
-  role: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export class UpdateUserProfileUseCase {
@@ -36,7 +28,7 @@ export class UpdateUserProfileUseCase {
     actor: UpdateUserActorInput,
     targetUserId: string,
     input: UpdateUserProfileInput,
-  ): Promise<UpdateUserProfileOutput> {
+  ): Promise<UserOutput> {
     const actorId = UserId.create(actor.id);
     const targetId = UserId.create(targetUserId);
 
@@ -58,14 +50,6 @@ export class UpdateUserProfileUseCase {
 
     const savedUser = await this.users.save(user);
 
-    return {
-      id: savedUser.id.value,
-      email: savedUser.email.value,
-      fullName: savedUser.fullName,
-      role: savedUser.role,
-      status: savedUser.status,
-      createdAt: savedUser.createdAt.toISOString(),
-      updatedAt: savedUser.updatedAt.toISOString(),
-    };
+    return UserOutputMapper.toOutput(savedUser);
   }
 }
