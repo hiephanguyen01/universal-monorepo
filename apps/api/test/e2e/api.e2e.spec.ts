@@ -184,8 +184,12 @@ describe(
             .create(
               AppModule,
               {
-                logger:
+                abortOnError:
                   false,
+
+                logger: [
+                  "error",
+                ],
               },
             );
 
