@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 
 import { Prisma } from "@/generated/prisma/client";
+import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { UserVersionConflictError } from "../application/errors/user-version-conflict.error";
 import type { User } from "../domain/entities/user.entity";
@@ -19,7 +20,10 @@ import { UserMapper } from "./mappers/user.mapper";
 type UserPrismaClient = Pick<PrismaClient, "user">;
 
 export class PrismaUserRepository implements UserRepository {
-  constructor(private readonly prisma: UserPrismaClient) {}
+  constructor(
+    @Inject(PrismaService)
+    private readonly prisma: UserPrismaClient,
+  ) {}
 
   async findById(id: UserId): Promise<User | null> {
     const record = await this.prisma.user.findUnique({
