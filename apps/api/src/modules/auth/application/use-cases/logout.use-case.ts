@@ -1,5 +1,11 @@
-import type { RefreshTokenRepository } from "../ports/refresh-token.repository";
-import type { TokenService } from "../ports/token-service.port";
+import type {
+  RefreshTokenPayload,
+  TokenService,
+} from "../ports/token-service.port";
+
+import type {
+  RefreshTokenRepository,
+} from "../ports/refresh-token.repository";
 
 export interface LogoutInput {
   refreshToken: string;
@@ -7,18 +13,47 @@ export interface LogoutInput {
 
 export class LogoutUseCase {
   constructor(
-    private readonly tokenService: TokenService,
-    private readonly refreshTokens: RefreshTokenRepository,
+    private readonly tokenService:
+      TokenService,
+
+    private readonly refreshTokens:
+      RefreshTokenRepository,
   ) {}
 
-  async execute(input: LogoutInput): Promise<void> {
+  async execute(
+    input: LogoutInput,
+  ): Promise<void> {
+    let payload:
+      RefreshTokenPayload;
+
     try {
-      const payload = await this.tokenService.verifyRefreshToken(
-        input.refreshToken,
-      );
-      await this.refreshTokens.revoke(payload.jti);
+      payload =
+        await this.tokenService
+          .verifyRefreshToken(
+            input.refreshToken,
+          );
     } catch {
-      // Invalidate silently if token is invalid or already expired
+      return;
     }
+
+    const session =
+      await this.refreshTokens
+        .findById(
+          payload.jti,
+        );
+
+    if (
+      !session ||
+      session.revokedAt ||
+      session.userId !==
+        payload.sub
+    ) {
+      return;
+    }
+
+    await this.refreshTokens
+      .revoke(
+        session.id,
+      );
   }
 }
