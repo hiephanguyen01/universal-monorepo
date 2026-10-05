@@ -1,62 +1,144 @@
-import { Injectable } from "@nestjs/common";
+import {
+  Injectable,
+} from "@nestjs/common";
 
-import { PrismaService } from "@/infrastructure/prisma/prisma.service";
+import {
+  PrismaService,
+} from "@/infrastructure/prisma/prisma.service";
 
 import type {
   CreateRefreshTokenInput,
   RefreshTokenRecord,
   RefreshTokenRepository,
+  RotateRefreshTokenInput,
 } from "@/modules/auth/application/ports/refresh-token.repository";
 
 @Injectable()
-export class PrismaRefreshTokenRepository implements RefreshTokenRepository {
-  constructor(private readonly prisma: PrismaService) {}
+export class PrismaRefreshTokenRepository
+  implements RefreshTokenRepository
+{
+  constructor(
+    private readonly prisma:
+      PrismaService,
+  ) {}
 
-  create(input: CreateRefreshTokenInput): Promise<RefreshTokenRecord> {
-    return this.prisma.refreshToken.create({
-      data: {
-        id: input.id,
+  create(
+    input: CreateRefreshTokenInput,
+  ): Promise<RefreshTokenRecord> {
+    return this.prisma.refreshToken
+      .create({
+        data: {
+          id:
+            input.id,
 
-        userId: input.userId,
+          userId:
+            input.userId,
 
-        tokenHash: input.tokenHash,
+          tokenHash:
+            input.tokenHash,
 
-        expiresAt: input.expiresAt,
-      },
-    });
+          expiresAt:
+            input.expiresAt,
+        },
+      });
   }
 
-  findById(id: string): Promise<RefreshTokenRecord | null> {
-    return this.prisma.refreshToken.findUnique({
-      where: {
-        id,
-      },
-    });
+  findById(
+    id: string,
+  ): Promise<RefreshTokenRecord | null> {
+    return this.prisma.refreshToken
+      .findUnique({
+        where: {
+          id,
+        },
+      });
   }
 
-  async revoke(id: string): Promise<void> {
-    await this.prisma.refreshToken.update({
-      where: {
-        id,
-      },
+  async revoke(
+    id: string,
+  ): Promise<void> {
+    await this.prisma.refreshToken
+      .updateMany({
+        where: {
+          id,
+          revokedAt:
+            null,
+        },
 
-      data: {
-        revokedAt: new Date(),
-      },
-    });
+        data: {
+          revokedAt:
+            new Date(),
+        },
+      });
   }
 
-  async revokeAllByUserId(userId: string): Promise<void> {
-    await this.prisma.refreshToken.updateMany({
-      where: {
-        userId,
+  async revokeAllByUserId(
+    userId: string,
+  ): Promise<void> {
+    await this.prisma.refreshToken
+      .updateMany({
+        where: {
+          userId,
 
-        revokedAt: null,
-      },
+          revokedAt:
+            null,
+        },
 
-      data: {
-        revokedAt: new Date(),
-      },
-    });
+        data: {
+          revokedAt:
+            new Date(),
+        },
+      });
+  }
+
+  rotate(
+    input: RotateRefreshTokenInput,
+  ): Promise<boolean> {
+    return this.prisma
+      .$transaction(
+        async (tx) => {
+          const result =
+            await tx.refreshToken
+              .updateMany({
+                where: {
+                  id:
+                    input.currentSessionId,
+
+                  revokedAt:
+                    null,
+                },
+
+                data: {
+                  revokedAt:
+                    new Date(),
+                },
+              });
+
+          if (
+            result.count !== 1
+          ) {
+            return false;
+          }
+
+          await tx.refreshToken
+            .create({
+              data: {
+                id:
+                  input.nextSession.id,
+
+                userId:
+                  input.nextSession.userId,
+
+                tokenHash:
+                  input.nextSession.tokenHash,
+
+                expiresAt:
+                  input.nextSession.expiresAt,
+              },
+            });
+
+          return true;
+        },
+      );
   }
 }
