@@ -12,6 +12,10 @@ import {
   Email,
 } from "../src/modules/users/domain/value-objects/email.vo";
 
+import {
+  UserId,
+} from "../src/modules/users/domain/value-objects/user-id.vo";
+
 function restoreUser(
   status:
     | "ACTIVE"
@@ -20,7 +24,10 @@ function restoreUser(
     "ACTIVE",
 ): User {
   return User.restore({
-    id: "user-1",
+    id:
+      UserId.create(
+        "user-1",
+      ),
     email:
       Email.create(
         "alice@example.com",
@@ -57,7 +64,9 @@ describe(
         const user =
           User.create({
             id:
-              "user-1",
+      UserId.create(
+        "user-1",
+      ),
             email:
               Email.create(
                 "alice@example.com",
@@ -70,7 +79,7 @@ describe(
           });
 
         expect(
-          user.id,
+          user.id.value,
         ).toBe(
           "user-1",
         );
