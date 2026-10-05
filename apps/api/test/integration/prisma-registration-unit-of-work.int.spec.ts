@@ -16,41 +16,17 @@ import {
 } from "@/modules/users/application/errors/duplicate-user-email.error";
 
 import {
-  User,
-} from "@/modules/users/domain/entities/user.entity";
+  makePrismaUserData,
+} from "../factories/prisma-user.factory";
 
 import {
-  Email,
-} from "@/modules/users/domain/value-objects/email.vo";
-
-import {
-  UserId,
-} from "@/modules/users/domain/value-objects/user-id.vo";
+  makeNewUser,
+} from "../factories/user.factory";
 
 import {
   clearDatabase,
   createTestPrisma,
 } from "../helpers/test-database";
-
-function createUser(
-  id: string,
-  email: string,
-): User {
-  return User.create({
-    id:
-      UserId.create(id),
-    email:
-      Email.create(email),
-    passwordHash:
-      "hash",
-    fullName:
-      "Alice",
-    now:
-      new Date(
-        "2026-10-05T10:00:00.000Z",
-      ),
-  });
-}
 
 describe(
   "PrismaRegistrationUnitOfWork integration",
@@ -88,10 +64,18 @@ describe(
       async () => {
         await unitOfWork.execute({
           user:
-            createUser(
-              "user-1",
-              "alice@example.com",
-            ),
+            makeNewUser({
+              id:
+                "user-1",
+              email:
+                "alice@example.com",
+              passwordHash:
+                "hash",
+              now:
+                new Date(
+                  "2026-10-05T10:00:00.000Z",
+                ),
+            }),
           refreshToken: {
             id:
               "session-1",
@@ -120,30 +104,25 @@ describe(
       "rolls back user insert when refresh token insert fails",
       async () => {
         await prisma.user.create({
-          data: {
-            id:
-              "existing-user",
-            email:
-              "existing@example.com",
-            passwordHash:
-              "hash",
-            fullName:
-              "Existing",
-            role:
-              "USER",
-            status:
-              "ACTIVE",
-            version:
-              0,
-            createdAt:
-              new Date(
-                "2026-10-05T09:00:00.000Z",
-              ),
-            updatedAt:
-              new Date(
-                "2026-10-05T09:00:00.000Z",
-              ),
-          },
+          data:
+            makePrismaUserData({
+              id:
+                "existing-user",
+              email:
+                "existing@example.com",
+              passwordHash:
+                "hash",
+              fullName:
+                "Existing",
+              createdAt:
+                new Date(
+                  "2026-10-05T09:00:00.000Z",
+                ),
+              updatedAt:
+                new Date(
+                  "2026-10-05T09:00:00.000Z",
+                ),
+            }),
         });
 
         await prisma.refreshToken.create({
@@ -164,10 +143,18 @@ describe(
         await expect(
           unitOfWork.execute({
             user:
-              createUser(
-                "new-user",
-                "new@example.com",
-              ),
+              makeNewUser({
+                id:
+                  "new-user",
+                email:
+                  "new@example.com",
+                passwordHash:
+                  "hash",
+                now:
+                  new Date(
+                    "2026-10-05T10:00:00.000Z",
+                  ),
+              }),
             refreshToken: {
               id:
                 "session-1",
@@ -198,39 +185,42 @@ describe(
       "maps duplicate email to DuplicateUserEmailError",
       async () => {
         await prisma.user.create({
-          data: {
-            id:
-              "existing-user",
-            email:
-              "alice@example.com",
-            passwordHash:
-              "hash",
-            fullName:
-              "Existing",
-            role:
-              "USER",
-            status:
-              "ACTIVE",
-            version:
-              0,
-            createdAt:
-              new Date(
-                "2026-10-05T09:00:00.000Z",
-              ),
-            updatedAt:
-              new Date(
-                "2026-10-05T09:00:00.000Z",
-              ),
-          },
+          data:
+            makePrismaUserData({
+              id:
+                "existing-user",
+              email:
+                "alice@example.com",
+              passwordHash:
+                "hash",
+              fullName:
+                "Existing",
+              createdAt:
+                new Date(
+                  "2026-10-05T09:00:00.000Z",
+                ),
+              updatedAt:
+                new Date(
+                  "2026-10-05T09:00:00.000Z",
+                ),
+            }),
         });
 
         await expect(
           unitOfWork.execute({
             user:
-              createUser(
-                "new-user",
-                "alice@example.com",
-              ),
+              makeNewUser({
+                id:
+                  "new-user",
+                email:
+                  "alice@example.com",
+                passwordHash:
+                  "hash",
+                now:
+                  new Date(
+                    "2026-10-05T10:00:00.000Z",
+                  ),
+              }),
             refreshToken: {
               id:
                 "session-new",
