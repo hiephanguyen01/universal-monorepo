@@ -1,14 +1,14 @@
 import { AuthModule } from "@/modules/auth/auth.module";
 import { Module } from "@nestjs/common";
+import { UserAccessPolicy } from "./application/policies/user-access.policy";
 import { GetCurrentUserUseCase } from "./application/use-cases/get-current-user.use-case";
 import { ListUsersUseCase } from "./application/use-cases/list-users.use-case";
 import { UpdateCurrentUserUseCase } from "./application/use-cases/update-current-user.use-case";
+import { UpdateUserProfileUseCase } from "./application/use-cases/update-user-profile.use-case";
 import type { UserRepository } from "./domain/repositories/user.repository";
 import { UsersPersistenceModule } from "./infrastructure/users-persistence.module";
 import { UsersController } from "./presentation/controllers/users.controller";
 import { USER_REPOSITORY } from "./users.tokens";
-import { UserAccessPolicy } from "../auth/application/policies/user-access.policy";
-import { UpdateUserProfileUseCase } from "./application/use-cases/update-user-profile.use-case";
 
 @Module({
   imports: [UsersPersistenceModule, AuthModule],

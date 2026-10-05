@@ -1,11 +1,31 @@
+import { Injectable } from "@nestjs/common";
+
 import { PrismaService } from "@/infrastructure/prisma/prisma.service";
+
 import { User } from "@/modules/users/domain/entities/user.entity";
+
+import type {
+  UserRole,
+  UserStatus,
+} from "@/modules/users/domain/entities/user.entity";
+
 import type {
   FindUsersInput,
   UserRepository,
 } from "@/modules/users/domain/repositories/user.repository";
-import { Injectable } from "@nestjs/common";
-import { Email } from "../domain/value-objects/email.vo";
+
+import { Email } from "@/modules/users/domain/value-objects/email.vo";
+
+interface PrismaUserRecord {
+  id: string;
+  email: string;
+  passwordHash: string;
+  fullName: string;
+  role: UserRole;
+  status: UserStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
@@ -22,7 +42,7 @@ export class PrismaUserRepository implements UserRepository {
       return null;
     }
 
-    return User.restore(record);
+    return this.toDomain(record);
   }
 
   async findByEmail(email: Email): Promise<User | null> {
@@ -50,7 +70,7 @@ export class PrismaUserRepository implements UserRepository {
       },
     });
 
-    return records.map((record) => User.restore(record));
+    return records.map((record) => this.toDomain(record));
   }
 
   count(): Promise<number> {
@@ -96,6 +116,26 @@ export class PrismaUserRepository implements UserRepository {
       },
     });
 
-    return User.restore(record);
+    return this.toDomain(record);
+  }
+
+  private toDomain(record: PrismaUserRecord): User {
+    return User.restore({
+      id: record.id,
+
+      email: Email.create(record.email),
+
+      passwordHash: record.passwordHash,
+
+      fullName: record.fullName,
+
+      role: record.role,
+
+      status: record.status,
+
+      createdAt: record.createdAt,
+
+      updatedAt: record.updatedAt,
+    });
   }
 }

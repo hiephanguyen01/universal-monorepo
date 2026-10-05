@@ -53,7 +53,7 @@ export class ListUsersUseCase {
         users.map(
           (user) => ({
             id: user.id,
-            email: user.email,
+            email: user.email.value,
             fullName:
               user.fullName,
             role: user.role,

@@ -27,7 +27,7 @@ export class GetCurrentUserUseCase {
 
     return {
       id: user.id,
-      email: user.email,
+      email: user.email.value,
       fullName: user.fullName,
       role: user.role,
       status: user.status,

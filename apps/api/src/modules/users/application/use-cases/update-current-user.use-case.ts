@@ -36,7 +36,7 @@ export class UpdateCurrentUserUseCase {
     return {
       id: savedUser.id,
 
-      email: savedUser.email,
+      email: savedUser.email.value,
 
       fullName: savedUser.fullName,
 

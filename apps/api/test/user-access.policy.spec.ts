@@ -1,4 +1,4 @@
-import { UserAccessPolicy } from "@/modules/auth/application/policies/user-access.policy";
+import { UserAccessPolicy } from "@/modules/users/application/policies/user-access.policy";
 import { describe, expect, it } from "vitest";
 
 describe("UserAccessPolicy", () => {

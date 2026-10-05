@@ -1,5 +1,6 @@
 import { UnauthorizedError } from "@/common/errors";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
+import { Email } from "@/modules/users/domain/value-objects/email.vo";
 import type { PasswordHasher } from "../ports/password-hasher.port";
 import type { RefreshTokenRepository } from "../ports/refresh-token.repository";
 import type { TokenService } from "../ports/token-service.port";
@@ -32,10 +33,17 @@ export class LoginUseCase {
   ) {}
 
   async execute(input: LoginInput): Promise<LoginOutput> {
-    const email = input.email.trim().toLowerCase();
+    let email: Email;
+
+    try {
+      email = Email.create(input.email);
+    } catch {
+      throw new UnauthorizedError("Invalid email or password");
+    }
+
     const user = await this.users.findByEmail(email);
 
-    if (!user || user.status !== "ACTIVE") {
+    if (!user || !user.isActive()) {
       throw new UnauthorizedError("Invalid email or password");
     }
 
@@ -50,12 +58,13 @@ export class LoginUseCase {
 
     const accessToken = await this.tokenService.generateAccessToken({
       sub: user.id,
-      email: user.email,
+      email: user.email.value,
       role: user.role,
     });
 
-    const generatedRefreshToken =
-      await this.tokenService.generateRefreshToken(user.id);
+    const generatedRefreshToken = await this.tokenService.generateRefreshToken(
+      user.id,
+    );
 
     const refreshTokenHash = await this.passwordHasher.hash(
       generatedRefreshToken.token,
@@ -73,7 +82,7 @@ export class LoginUseCase {
       refreshToken: generatedRefreshToken.token,
       user: {
         id: user.id,
-        email: user.email,
+        email: user.email.value,
         fullName: user.fullName,
         role: user.role,
         status: user.status,

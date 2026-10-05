@@ -1,13 +1,6 @@
-import type { User, UserRole } from "../entities/user.entity";
-import { Email } from "../value-objects/email.vo";
+import type { User } from "../entities/user.entity";
 
-export interface CreateUserInput {
-  email: Email;
-  passwordHash: string;
-  fullName: string;
-  role?: UserRole;
-}
-
+import type { Email } from "../value-objects/email.vo";
 
 export interface FindUsersInput {
   skip: number;
@@ -23,7 +16,7 @@ export interface UserRepository {
 
   count(): Promise<number>;
 
-  create(input: CreateUserInput): Promise<User>;
+  create(user: User): Promise<User>;
 
   save(user: User): Promise<User>;
 }

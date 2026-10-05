@@ -21,15 +21,11 @@ export class RefreshTokenUseCase {
     private readonly tokenService: TokenService,
   ) {}
 
-  async execute(
-    input: RefreshTokenInput,
-  ): Promise<RefreshTokenOutput> {
+  async execute(input: RefreshTokenInput): Promise<RefreshTokenOutput> {
     let payload;
 
     try {
-      payload = await this.tokenService.verifyRefreshToken(
-        input.refreshToken,
-      );
+      payload = await this.tokenService.verifyRefreshToken(input.refreshToken);
     } catch {
       throw new UnauthorizedError("Invalid refresh token");
     }
@@ -63,7 +59,7 @@ export class RefreshTokenUseCase {
 
     const user = await this.users.findById(session.userId);
 
-    if (!user || user.status !== "ACTIVE") {
+    if (!user || !user.isActive()) {
       throw new UnauthorizedError("User is not active");
     }
 
@@ -71,12 +67,13 @@ export class RefreshTokenUseCase {
 
     const accessToken = await this.tokenService.generateAccessToken({
       sub: user.id,
-      email: user.email,
+      email: user.email.value,
       role: user.role,
     });
 
-    const nextRefreshToken =
-      await this.tokenService.generateRefreshToken(user.id);
+    const nextRefreshToken = await this.tokenService.generateRefreshToken(
+      user.id,
+    );
 
     const nextTokenHash = await this.passwordHasher.hash(
       nextRefreshToken.token,

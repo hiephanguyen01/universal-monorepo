@@ -1,10 +1,7 @@
 import { NotFoundError } from "@/common/errors";
 
-import {
-  UserAccessPolicy,
-  UserActor,
-} from "@/modules/auth/application/policies/user-access.policy";
 import type { UserRepository } from "../../domain/repositories/user.repository";
+import { UserAccessPolicy, UserActor } from "../policies/user-access.policy";
 
 export interface UpdateUserProfileInput {
   fullName: string;
@@ -47,7 +44,7 @@ export class UpdateUserProfileUseCase {
     return {
       id: savedUser.id,
 
-      email: savedUser.email,
+      email: savedUser.email.value,
 
       fullName: savedUser.fullName,
 
