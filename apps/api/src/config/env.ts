@@ -18,6 +18,12 @@ dotenv.config({
 
 dotenv.config();
 
+const durationSchema =
+  z.string().regex(
+    /^\d+[smhd]$/,
+    "Duration must use s, m, h, or d, for example 15m or 30d",
+  );
+
 const schema = z.object({
   NODE_ENV: z
     .enum([
@@ -45,12 +51,12 @@ const schema = z.object({
     z.string().min(16),
 
   JWT_ACCESS_EXPIRES_IN:
-    z.string().default(
+    durationSchema.default(
       "15m",
     ),
 
   JWT_REFRESH_EXPIRES_IN:
-    z.string().default(
+    durationSchema.default(
       "30d",
     ),
 
