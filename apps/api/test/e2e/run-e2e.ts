@@ -200,6 +200,41 @@ function assertStatus<T>(
   );
 }
 
+async function waitForOutboxProcessed():
+  Promise<void> {
+  const deadline =
+    Date.now() +
+    5_000;
+
+  while (
+    Date.now() <
+    deadline
+  ) {
+    const event =
+      await prisma.outboxEvent
+        .findFirst({
+          orderBy: {
+            createdAt:
+              "desc",
+          },
+        });
+
+    if (
+      event?.processedAt
+    ) {
+      return;
+    }
+
+    await delay(
+      100,
+    );
+  }
+
+  throw new Error(
+    "Timed out waiting for outbox delivery",
+  );
+}
+
 async function registerUser(
   email =
     "alice@example.com",
@@ -454,6 +489,23 @@ async function main():
             .refreshToken
             .count(),
           1,
+        );
+
+        assert.equal(
+          await prisma.outboxEvent
+            .count(),
+          1,
+        );
+
+        await waitForOutboxProcessed();
+
+        const outboxEvent =
+          await prisma.outboxEvent
+            .findFirstOrThrow();
+
+        assert.ok(
+          outboxEvent
+            .processedAt,
         );
       },
     );
