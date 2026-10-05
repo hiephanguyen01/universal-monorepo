@@ -1,6 +1,10 @@
 import { Module } from "@nestjs/common";
 
 import {
+  DomainEventRegistry,
+} from "./infrastructure/events/domain-event-registry";
+
+import {
   InMemoryDomainEventDispatcher,
 } from "./infrastructure/events/in-memory-domain-event-dispatcher";
 
@@ -32,6 +36,7 @@ import {
       useClass:
         SystemClock,
     },
+    DomainEventRegistry,
     InMemoryDomainEventDispatcher,
     {
       provide:
@@ -44,6 +49,7 @@ import {
     ID_GENERATOR,
     CLOCK,
     DOMAIN_EVENT_DISPATCHER,
+    DomainEventRegistry,
     InMemoryDomainEventDispatcher,
   ],
 })
