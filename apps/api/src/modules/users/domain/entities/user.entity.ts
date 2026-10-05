@@ -89,15 +89,17 @@ export class User {
     return this.props.updatedAt;
   }
 
-  changeFullName(fullName: string, now: Date): void {
+  changeFullName(fullName: string, now: Date): boolean {
     const normalized = User.normalizeFullName(fullName);
 
     if (normalized === this.props.fullName) {
-      return;
+      return false;
     }
 
     this.props.fullName = normalized;
     this.touch(now);
+
+    return true;
   }
 
   block(now: Date): void {

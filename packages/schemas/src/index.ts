@@ -11,6 +11,7 @@ export const registerSchema = loginSchema.extend({
 
 export const updateProfileSchema = z.object({
   fullName: z.string().trim().min(2).max(100),
+  version: z.number().int().nonnegative(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

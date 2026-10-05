@@ -1,10 +1,11 @@
-import { NotFoundError } from "@/common/errors";
+import { ConflictError, NotFoundError } from "@/common/errors";
 import type { Clock } from "@/common/ports/clock.port";
 
 import type { UserRole } from "../../domain/entities/user.entity";
 import type { UserRepository } from "../../domain/repositories/user.repository";
 import { UserId } from "../../domain/value-objects/user-id.vo";
 import { UserOutput } from "../dto/user-output";
+import { UserVersionConflictError } from "../errors/user-version-conflict.error";
 import { UserOutputMapper } from "../mappers/user-output.mapper";
 import { UserAccessPolicy } from "../policies/user-access.policy";
 
@@ -15,6 +16,7 @@ export interface UpdateUserActorInput {
 
 export interface UpdateUserProfileInput {
   fullName: string;
+  version: number;
 }
 
 export class UpdateUserProfileUseCase {
@@ -46,9 +48,31 @@ export class UpdateUserProfileUseCase {
       throw new NotFoundError("User not found");
     }
 
-    user.changeFullName(input.fullName, this.clock.now());
+    if (user.version !== input.version) {
+      throw new ConflictError(
+        "USER_CONCURRENT_MODIFICATION",
+        "User was modified by another request",
+      );
+    }
 
-    const savedUser = await this.users.save(user);
+    const changed = user.changeFullName(input.fullName, this.clock.now());
+
+    let savedUser = user;
+
+    try {
+      if (changed) {
+        savedUser = await this.users.save(user);
+      }
+    } catch (error) {
+      if (error instanceof UserVersionConflictError) {
+        throw new ConflictError(
+          "USER_CONCURRENT_MODIFICATION",
+          "User was modified by another request",
+        );
+      }
+
+      throw error;
+    }
 
     return UserOutputMapper.toOutput(savedUser);
   }

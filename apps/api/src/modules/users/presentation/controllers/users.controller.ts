@@ -61,6 +61,7 @@ export class UsersController {
   ) {
     return this.updateCurrentUser.execute(user.id, {
       fullName: dto.fullName,
+      version: dto.version,
     });
   }
 
@@ -85,6 +86,7 @@ export class UsersController {
 
       {
         fullName: dto.fullName,
+        version: dto.version,
       },
     );
   }

@@ -1,4 +1,4 @@
-import { NotFoundError } from "@/common/errors";
+import { ConflictError, NotFoundError } from "@/common/errors";
 import type { Clock } from "@/common/ports/clock.port";
 
 import type { UserRepository } from "../../domain/repositories/user.repository";
@@ -9,6 +9,7 @@ import { UserOutputMapper } from "../mappers/user-output.mapper";
 
 export interface UpdateCurrentUserInput {
   fullName: string;
+  version: number;
 }
 
 export class UpdateCurrentUserUseCase {
@@ -27,10 +28,15 @@ export class UpdateCurrentUserUseCase {
       throw new NotFoundError("User not found");
     }
 
-    user.changeFullName(input.fullName, this.clock.now());
+    if (user.version !== input.version) {
+      throw new ConflictError(
+        "USER_CONCURRENT_MODIFICATION",
+        "User was modified by another request",
+      );
+    }
 
     const savedUser = await this.users.save(user);
-    
+
     return UserOutputMapper.toOutput(savedUser);
   }
 }

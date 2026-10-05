@@ -13,6 +13,7 @@ export interface UserDto {
   fullName: string;
   role: UserRole;
   status: UserStatus;
+  version: number;
   createdAt: string;
   updatedAt: string;
 }
