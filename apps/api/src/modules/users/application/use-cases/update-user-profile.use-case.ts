@@ -64,12 +64,17 @@ export class UpdateUserProfileUseCase {
       );
     }
 
-    user.changeFullName(input.fullName, this.clock.now());
+    const changed = user.changeFullName(
+      input.fullName,
+      this.clock.now(),
+    );
 
-    let savedUser;
+    let savedUser = user;
 
     try {
-      savedUser = await this.users.save(user);
+      if (changed) {
+        savedUser = await this.users.save(user);
+      }
     } catch (error) {
       if (error instanceof UserVersionConflictError) {
         throw new ConflictError(
