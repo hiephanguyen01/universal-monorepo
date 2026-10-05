@@ -5,6 +5,14 @@ import {
 } from "vitest";
 
 import type {
+  DomainEvent,
+} from "../src/common/domain/domain-event";
+
+import type {
+  DomainEventDispatcher,
+} from "../src/common/ports/domain-event-dispatcher.port";
+
+import type {
   IdGenerator,
 } from "../src/common/ports/id-generator.port";
 
@@ -48,6 +56,10 @@ import type {
 import type {
   Email,
 } from "../src/modules/users/domain/value-objects/email.vo";
+
+import {
+  UserRegisteredEvent,
+} from "../src/modules/users/domain/events/user-registered.event";
 
 import type {
   UserId,
@@ -290,6 +302,24 @@ class FakeIdGenerator
   }
 }
 
+class FakeDomainEventDispatcher
+  implements DomainEventDispatcher
+{
+  readonly events:
+    DomainEvent[] =
+    [];
+
+  dispatch(
+    event: DomainEvent,
+  ): Promise<void> {
+    this.events.push(
+      event,
+    );
+
+    return Promise.resolve();
+  }
+}
+
 function createFixture() {
   const users =
     new InMemoryUserRepository();
@@ -304,6 +334,9 @@ function createFixture() {
       "2026-10-05T10:00:00.000Z",
     );
 
+  const events =
+    new FakeDomainEventDispatcher();
+
   const useCase =
     new RegisterUseCase(
       users,
@@ -314,11 +347,13 @@ function createFixture() {
       new FakeClock(
         now,
       ),
+      events,
     );
 
   return {
     users,
     unitOfWork,
+    events,
     useCase,
     now,
   };
@@ -333,6 +368,7 @@ describe(
         const {
           users,
           unitOfWork,
+          events,
           useCase,
           now,
         } =
@@ -388,6 +424,27 @@ describe(
             "session-1",
           ),
         ).toBe(true);
+
+        expect(
+          events.events,
+        ).toHaveLength(1);
+
+        expect(
+          events.events[0],
+        ).toBeInstanceOf(
+          UserRegisteredEvent,
+        );
+
+        expect(
+          events.events[0],
+        ).toMatchObject({
+          userId:
+            "user-1",
+          email:
+            "a@example.com",
+          occurredAt:
+            now,
+        });
       },
     );
 
@@ -432,6 +489,7 @@ describe(
         const {
           users,
           unitOfWork,
+          events,
           useCase,
         } =
           createFixture();
@@ -459,6 +517,10 @@ describe(
         expect(
           unitOfWork.sessions.size,
         ).toBe(0);
+
+        expect(
+          events.events,
+        ).toHaveLength(0);
       },
     );
 
@@ -468,6 +530,7 @@ describe(
         const {
           users,
           unitOfWork,
+          events,
           useCase,
         } =
           createFixture();
@@ -498,6 +561,10 @@ describe(
         expect(
           unitOfWork.sessions.size,
         ).toBe(0);
+
+        expect(
+          events.events,
+        ).toHaveLength(0);
       },
     );
   },
