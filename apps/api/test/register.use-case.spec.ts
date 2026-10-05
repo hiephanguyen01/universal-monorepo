@@ -21,6 +21,7 @@ import type {
   UserRepository,
 } from "../src/modules/users/domain/repositories/user.repository";
 import type { Email } from "../src/modules/users/domain/value-objects/email.vo";
+import type { UserId } from "../src/modules/users/domain/value-objects/user-id.vo";
 
 class InMemoryUserRepository
   implements UserRepository
@@ -41,12 +42,14 @@ class InMemoryUserRepository
   }
 
   findById(
-    id: string,
+    id: UserId,
   ): Promise<User | null> {
     return Promise.resolve(
       this.items.find(
         (user) =>
-          user.id === id,
+          user.id.equals(
+            id,
+          ),
       ) ?? null,
     );
   }
@@ -87,7 +90,9 @@ class InMemoryUserRepository
     const index =
       this.items.findIndex(
         (item) =>
-          item.id === user.id,
+          item.id.equals(
+            user.id,
+          ),
       );
 
     if (index < 0) {
