@@ -4,6 +4,10 @@ import {
   it,
 } from "vitest";
 
+import type {
+  Clock,
+} from "../src/common/ports/clock.port";
+
 import {
   GetCurrentUserUseCase,
 } from "../src/modules/users/application/use-cases/get-current-user.use-case";
@@ -32,6 +36,19 @@ import {
 import {
   UserId,
 } from "../src/modules/users/domain/value-objects/user-id.vo";
+
+class FakeClock
+  implements Clock
+{
+  constructor(
+    private readonly current:
+      Date,
+  ) {}
+
+  now(): Date {
+    return this.current;
+  }
+}
 
 class InMemoryUserRepository
   implements UserRepository
@@ -144,26 +161,19 @@ function createUser(
       UserId.create(
         input.id,
       ),
-
     email:
       Email.create(
         input.email,
       ),
-
     passwordHash:
       "hashed-password",
-
     fullName:
       input.fullName,
-
     role:
       input.role,
-
     status:
       "ACTIVE",
-
     createdAt,
-
     updatedAt:
       createdAt,
   });
@@ -216,7 +226,7 @@ describe(
     );
 
     it(
-      "updates the current user's full name",
+      "updates the current user's full name with clock time",
       async () => {
         const user =
           createUser({
@@ -237,9 +247,17 @@ describe(
             [user],
           );
 
+        const now =
+          new Date(
+            "2026-10-05T10:00:00.000Z",
+          );
+
         const useCase =
           new UpdateCurrentUserUseCase(
             repository,
+            new FakeClock(
+              now,
+            ),
           );
 
         const result =
@@ -255,6 +273,12 @@ describe(
           result.fullName,
         ).toBe(
           "Alice Updated",
+        );
+
+        expect(
+          result.updatedAt,
+        ).toBe(
+          now.toISOString(),
         );
 
         expect(
