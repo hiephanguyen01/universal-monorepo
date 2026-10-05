@@ -29,6 +29,10 @@ import {
   Email,
 } from "../src/modules/users/domain/value-objects/email.vo";
 
+import {
+  UserId,
+} from "../src/modules/users/domain/value-objects/user-id.vo";
+
 class InMemoryUserRepository
   implements UserRepository
 {
@@ -38,12 +42,14 @@ class InMemoryUserRepository
   ) {}
 
   findById(
-    id: string,
+    id: UserId,
   ): Promise<User | null> {
     return Promise.resolve(
       this.users.find(
         (user) =>
-          user.id === id,
+          user.id.equals(
+            id,
+          ),
       ) ?? null,
     );
   }
@@ -97,7 +103,9 @@ class InMemoryUserRepository
     const index =
       this.users.findIndex(
         (item) =>
-          item.id === user.id,
+          item.id.equals(
+            user.id,
+          ),
       );
 
     if (index < 0) {
@@ -133,20 +141,29 @@ function createUser(
 
   return User.restore({
     id:
-      input.id,
+      UserId.create(
+        input.id,
+      ),
+
     email:
       Email.create(
         input.email,
       ),
+
     passwordHash:
       "hashed-password",
+
     fullName:
       input.fullName,
+
     role:
       input.role,
+
     status:
       "ACTIVE",
+
     createdAt,
+
     updatedAt:
       createdAt,
   });
@@ -244,7 +261,9 @@ describe(
           (
             await repository
               .findById(
-                "user-1",
+                UserId.create(
+                  "user-1",
+                ),
               )
           )?.fullName,
         ).toBe(
