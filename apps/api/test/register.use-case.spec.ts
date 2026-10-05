@@ -1,32 +1,80 @@
-import { describe, expect, it } from "vitest";
+import {
+  describe,
+  expect,
+  it,
+} from "vitest";
 
-import type { IdGenerator } from "../src/common/ports/id-generator.port";
-import type { PasswordHasher } from "../src/modules/auth/application/ports/password-hasher.port";
 import type {
-  CreateRefreshTokenInput,
+  Clock,
+} from "../src/common/ports/clock.port";
+
+import type {
+  IdGenerator,
+} from "../src/common/ports/id-generator.port";
+
+import type {
+  PasswordHasher,
+} from "../src/modules/auth/application/ports/password-hasher.port";
+
+import type {
   RefreshTokenRecord,
-  RefreshTokenRepository,
-  RotateRefreshTokenInput,
 } from "../src/modules/auth/application/ports/refresh-token.repository";
+
+import type {
+  RegisterTransactionInput,
+  RegistrationUnitOfWork,
+} from "../src/modules/auth/application/ports/registration-unit-of-work.port";
+
 import type {
   AccessTokenPayload,
   GeneratedRefreshToken,
   RefreshTokenPayload,
   TokenService,
 } from "../src/modules/auth/application/ports/token-service.port";
-import { RegisterUseCase } from "../src/modules/auth/application/use-cases/register.use-case";
-import { User } from "../src/modules/users/domain/entities/user.entity";
+
+import {
+  RegisterUseCase,
+} from "../src/modules/auth/application/use-cases/register.use-case";
+
+import {
+  DuplicateUserEmailError,
+} from "../src/modules/users/application/errors/duplicate-user-email.error";
+
+import {
+  User,
+} from "../src/modules/users/domain/entities/user.entity";
+
 import type {
   FindUsersInput,
   UserRepository,
 } from "../src/modules/users/domain/repositories/user.repository";
-import type { Email } from "../src/modules/users/domain/value-objects/email.vo";
-import type { UserId } from "../src/modules/users/domain/value-objects/user-id.vo";
+
+import type {
+  Email,
+} from "../src/modules/users/domain/value-objects/email.vo";
+
+import type {
+  UserId,
+} from "../src/modules/users/domain/value-objects/user-id.vo";
+
+class FakeClock
+  implements Clock
+{
+  constructor(
+    private readonly current:
+      Date,
+  ) {}
+
+  now(): Date {
+    return this.current;
+  }
+}
 
 class InMemoryUserRepository
   implements UserRepository
 {
-  readonly items: User[] = [];
+  readonly items: User[] =
+    [];
 
   findByEmail(
     email: Email,
@@ -110,6 +158,70 @@ class InMemoryUserRepository
   }
 }
 
+class InMemoryRegistrationUnitOfWork
+  implements RegistrationUnitOfWork
+{
+  readonly sessions =
+    new Map<
+      string,
+      RefreshTokenRecord
+    >();
+
+  failBeforeCommit =
+    false;
+
+  duplicateEmail =
+    false;
+
+  constructor(
+    private readonly users:
+      InMemoryUserRepository,
+  ) {}
+
+  execute(
+    input:
+      RegisterTransactionInput,
+  ): Promise<User> {
+    if (
+      this.duplicateEmail
+    ) {
+      throw new DuplicateUserEmailError();
+    }
+
+    if (
+      this.failBeforeCommit
+    ) {
+      throw new Error(
+        "Transaction failed",
+      );
+    }
+
+    const session:
+      RefreshTokenRecord = {
+      ...input.refreshToken,
+      revokedAt:
+        null,
+      createdAt:
+        new Date(
+          "2026-10-05T10:00:00.000Z",
+        ),
+    };
+
+    this.users.items.push(
+      input.user,
+    );
+
+    this.sessions.set(
+      session.id,
+      session,
+    );
+
+    return Promise.resolve(
+      input.user,
+    );
+  }
+}
+
 class FakePasswordHasher
   implements PasswordHasher
 {
@@ -157,8 +269,7 @@ class FakeTokenService
         "session-1",
       expiresAt:
         new Date(
-          Date.now() +
-            60_000,
+          "2026-10-06T10:00:00.000Z",
         ),
     });
   }
@@ -184,117 +295,6 @@ class FakeTokenService
   }
 }
 
-class InMemoryRefreshTokenRepository
-  implements RefreshTokenRepository
-{
-  readonly items =
-    new Map<
-      string,
-      RefreshTokenRecord
-    >();
-
-  create(
-    input: CreateRefreshTokenInput,
-  ): Promise<RefreshTokenRecord> {
-    const record:
-      RefreshTokenRecord = {
-      ...input,
-      revokedAt: null,
-      createdAt:
-        new Date(),
-    };
-
-    this.items.set(
-      record.id,
-      record,
-    );
-
-    return Promise.resolve(
-      record,
-    );
-  }
-
-  findById(
-    id: string,
-  ): Promise<RefreshTokenRecord | null> {
-    return Promise.resolve(
-      this.items.get(id) ??
-        null,
-    );
-  }
-
-  revoke(
-    id: string,
-  ): Promise<void> {
-    const record =
-      this.items.get(id);
-
-    if (record) {
-      record.revokedAt =
-        new Date();
-    }
-
-    return Promise.resolve();
-  }
-
-  revokeAllByUserId(
-    userId: string,
-  ): Promise<void> {
-    for (
-      const record
-      of this.items.values()
-    ) {
-      if (
-        record.userId ===
-        userId
-      ) {
-        record.revokedAt =
-          new Date();
-      }
-    }
-
-    return Promise.resolve();
-  }
-
-  rotate(
-    input: RotateRefreshTokenInput,
-  ): Promise<boolean> {
-    const current =
-      this.items.get(
-        input.currentSessionId,
-      );
-
-    if (
-      !current ||
-      current.revokedAt
-    ) {
-      return Promise.resolve(
-        false,
-      );
-    }
-
-    current.revokedAt =
-      new Date();
-
-    const next:
-      RefreshTokenRecord = {
-      ...input.nextSession,
-      revokedAt: null,
-      createdAt:
-        new Date(),
-    };
-
-    this.items.set(
-      next.id,
-      next,
-    );
-
-    return Promise.resolve(
-      true,
-    );
-  }
-}
-
 class FakeIdGenerator
   implements IdGenerator
 {
@@ -303,38 +303,53 @@ class FakeIdGenerator
   }
 }
 
-function createUseCase(
-  users:
-    InMemoryUserRepository,
-  sessions:
-    InMemoryRefreshTokenRepository,
-) {
-  return new RegisterUseCase(
+function createFixture() {
+  const users =
+    new InMemoryUserRepository();
+
+  const unitOfWork =
+    new InMemoryRegistrationUnitOfWork(
+      users,
+    );
+
+  const now =
+    new Date(
+      "2026-10-05T10:00:00.000Z",
+    );
+
+  const useCase =
+    new RegisterUseCase(
+      users,
+      new FakePasswordHasher(),
+      new FakeTokenService(),
+      unitOfWork,
+      new FakeIdGenerator(),
+      new FakeClock(
+        now,
+      ),
+    );
+
+  return {
     users,
-    new FakePasswordHasher(),
-    new FakeTokenService(),
-    sessions,
-    new FakeIdGenerator(),
-  );
+    unitOfWork,
+    useCase,
+    now,
+  };
 }
 
 describe(
   "RegisterUseCase",
   () => {
     it(
-      "creates a normalized user and refresh session",
+      "creates a normalized user and refresh session atomically",
       async () => {
-        const users =
-          new InMemoryUserRepository();
-
-        const sessions =
-          new InMemoryRefreshTokenRepository();
-
-        const useCase =
-          createUseCase(
-            users,
-            sessions,
-          );
+        const {
+          users,
+          unitOfWork,
+          useCase,
+          now,
+        } =
+          createFixture();
 
         const result =
           await useCase.execute({
@@ -365,10 +380,14 @@ describe(
         );
 
         expect(
-          result.user.status,
+          result.user.createdAt,
         ).toBe(
-          "ACTIVE",
+          now.toISOString(),
         );
+
+        expect(
+          users.items,
+        ).toHaveLength(1);
 
         expect(
           users.items[0]
@@ -378,19 +397,7 @@ describe(
         );
 
         expect(
-          result.accessToken,
-        ).toBe(
-          "access-token",
-        );
-
-        expect(
-          result.refreshToken,
-        ).toBe(
-          "refresh-token",
-        );
-
-        expect(
-          sessions.items.has(
+          unitOfWork.sessions.has(
             "session-1",
           ),
         ).toBe(true);
@@ -400,17 +407,10 @@ describe(
     it(
       "rejects a duplicate email after normalization",
       async () => {
-        const users =
-          new InMemoryUserRepository();
-
-        const sessions =
-          new InMemoryRefreshTokenRepository();
-
-        const useCase =
-          createUseCase(
-            users,
-            sessions,
-          );
+        const {
+          useCase,
+        } =
+          createFixture();
 
         await useCase.execute({
           email:
@@ -433,8 +433,84 @@ describe(
         ).rejects.toMatchObject({
           code:
             "EMAIL_ALREADY_EXISTS",
-          status: 409,
+          status:
+            409,
         });
+      },
+    );
+
+    it(
+      "rolls back registration state when the transaction fails",
+      async () => {
+        const {
+          users,
+          unitOfWork,
+          useCase,
+        } =
+          createFixture();
+
+        unitOfWork.failBeforeCommit =
+          true;
+
+        await expect(
+          useCase.execute({
+            email:
+              "alice@example.com",
+            password:
+              "password123",
+            fullName:
+              "Alice",
+          }),
+        ).rejects.toThrow(
+          "Transaction failed",
+        );
+
+        expect(
+          users.items,
+        ).toHaveLength(0);
+
+        expect(
+          unitOfWork.sessions.size,
+        ).toBe(0);
+      },
+    );
+
+    it(
+      "maps a concurrent duplicate email to conflict",
+      async () => {
+        const {
+          users,
+          unitOfWork,
+          useCase,
+        } =
+          createFixture();
+
+        unitOfWork.duplicateEmail =
+          true;
+
+        await expect(
+          useCase.execute({
+            email:
+              "alice@example.com",
+            password:
+              "password123",
+            fullName:
+              "Alice",
+          }),
+        ).rejects.toMatchObject({
+          code:
+            "EMAIL_ALREADY_EXISTS",
+          status:
+            409,
+        });
+
+        expect(
+          users.items,
+        ).toHaveLength(0);
+
+        expect(
+          unitOfWork.sessions.size,
+        ).toBe(0);
       },
     );
   },
