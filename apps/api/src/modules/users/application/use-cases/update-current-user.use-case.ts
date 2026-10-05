@@ -1,6 +1,7 @@
 import { NotFoundError } from "@/common/errors";
 
 import type { UserRepository } from "../../domain/repositories/user.repository";
+import { UserId } from "../../domain/value-objects/user-id.vo";
 
 export interface UpdateCurrentUserInput {
   fullName: string;
@@ -23,7 +24,7 @@ export class UpdateCurrentUserUseCase {
     userId: string,
     input: UpdateCurrentUserInput,
   ): Promise<UpdateCurrentUserOutput> {
-    const user = await this.users.findById(userId);
+    const user = await this.users.findById(UserId.create(userId));
 
     if (!user) {
       throw new NotFoundError("User not found");
@@ -34,7 +35,7 @@ export class UpdateCurrentUserUseCase {
     const savedUser = await this.users.save(user);
 
     return {
-      id: savedUser.id,
+      id: savedUser.id.value,
 
       email: savedUser.email.value,
 

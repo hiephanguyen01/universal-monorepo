@@ -2,39 +2,27 @@ import { Injectable } from "@nestjs/common";
 
 import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 
-import { User } from "@/modules/users/domain/entities/user.entity";
-
-import type {
-  UserRole,
-  UserStatus,
-} from "@/modules/users/domain/entities/user.entity";
+import type { User } from "../domain/entities/user.entity";
 
 import type {
   FindUsersInput,
   UserRepository,
-} from "@/modules/users/domain/repositories/user.repository";
+} from "../domain/repositories/user.repository";
 
-import { Email } from "@/modules/users/domain/value-objects/email.vo";
+import type { Email } from "../domain/value-objects/email.vo";
 
-interface PrismaUserRecord {
-  id: string;
-  email: string;
-  passwordHash: string;
-  fullName: string;
-  role: UserRole;
-  status: UserStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import type { UserId } from "../domain/value-objects/user-id.vo";
+
+import { UserMapper } from "./mappers/user.mapper";
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: UserId): Promise<User | null> {
     const record = await this.prisma.user.findUnique({
       where: {
-        id,
+        id: id.value,
       },
     });
 
@@ -42,7 +30,7 @@ export class PrismaUserRepository implements UserRepository {
       return null;
     }
 
-    return this.toDomain(record);
+    return UserMapper.toDomain(record);
   }
 
   async findByEmail(email: Email): Promise<User | null> {
@@ -56,7 +44,7 @@ export class PrismaUserRepository implements UserRepository {
       return null;
     }
 
-    return this.toDomain(record);
+    return UserMapper.toDomain(record);
   }
 
   async findMany(input: FindUsersInput): Promise<User[]> {
@@ -70,7 +58,7 @@ export class PrismaUserRepository implements UserRepository {
       },
     });
 
-    return records.map((record) => this.toDomain(record));
+    return records.map(UserMapper.toDomain);
   }
 
   count(): Promise<number> {
@@ -78,64 +66,38 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async create(user: User): Promise<User> {
+    const data = UserMapper.toPersistence(user);
+
     const record = await this.prisma.user.create({
-      data: {
-        id: user.id,
-
-        email: user.email.value,
-
-        passwordHash: user.passwordHash,
-
-        fullName: user.fullName,
-
-        role: user.role,
-
-        status: user.status,
-
-        createdAt: user.createdAt,
-
-        updatedAt: user.updatedAt,
-      },
+      data,
     });
 
-    return this.toDomain(record);
+    return UserMapper.toDomain(record);
   }
 
   async save(user: User): Promise<User> {
+    const data = UserMapper.toPersistence(user);
+
     const record = await this.prisma.user.update({
       where: {
-        id: user.id,
+        id: data.id,
       },
 
       data: {
-        fullName: user.fullName,
+        email: data.email,
 
-        role: user.role,
+        passwordHash: data.passwordHash,
 
-        status: user.status,
+        fullName: data.fullName,
+
+        role: data.role,
+
+        status: data.status,
+
+        updatedAt: data.updatedAt,
       },
     });
 
-    return this.toDomain(record);
-  }
-
-  private toDomain(record: PrismaUserRecord): User {
-    return User.restore({
-      id: record.id,
-
-      email: Email.create(record.email),
-
-      passwordHash: record.passwordHash,
-
-      fullName: record.fullName,
-
-      role: record.role,
-
-      status: record.status,
-
-      createdAt: record.createdAt,
-
-      updatedAt: record.updatedAt,
-    });
+    return UserMapper.toDomain(record);
   }
 }

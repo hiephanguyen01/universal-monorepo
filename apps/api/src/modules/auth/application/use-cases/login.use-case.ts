@@ -57,13 +57,13 @@ export class LoginUseCase {
     }
 
     const accessToken = await this.tokenService.generateAccessToken({
-      sub: user.id,
+      sub: user.id.value,
       email: user.email.value,
       role: user.role,
     });
 
     const generatedRefreshToken = await this.tokenService.generateRefreshToken(
-      user.id,
+      user.id.value,
     );
 
     const refreshTokenHash = await this.passwordHasher.hash(
@@ -72,7 +72,7 @@ export class LoginUseCase {
 
     await this.refreshTokens.create({
       id: generatedRefreshToken.sessionId,
-      userId: user.id,
+      userId: user.id.value,
       tokenHash: refreshTokenHash,
       expiresAt: generatedRefreshToken.expiresAt,
     });
@@ -81,7 +81,7 @@ export class LoginUseCase {
       accessToken,
       refreshToken: generatedRefreshToken.token,
       user: {
-        id: user.id,
+        id: user.id.value,
         email: user.email.value,
         fullName: user.fullName,
         role: user.role,

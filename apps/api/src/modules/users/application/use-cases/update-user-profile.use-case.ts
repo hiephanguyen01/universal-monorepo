@@ -1,6 +1,7 @@
 import { NotFoundError } from "@/common/errors";
 
 import type { UserRepository } from "../../domain/repositories/user.repository";
+import { UserId } from "../../domain/value-objects/user-id.vo";
 import { UserAccessPolicy, UserActor } from "../policies/user-access.policy";
 
 export interface UpdateUserProfileInput {
@@ -31,7 +32,7 @@ export class UpdateUserProfileUseCase {
   ): Promise<UpdateUserProfileOutput> {
     this.accessPolicy.assertCanUpdateProfile(actor, targetUserId);
 
-    const user = await this.users.findById(targetUserId);
+    const user = await this.users.findById(UserId.create(targetUserId));
 
     if (!user) {
       throw new NotFoundError("User not found");
@@ -42,7 +43,7 @@ export class UpdateUserProfileUseCase {
     const savedUser = await this.users.save(user);
 
     return {
-      id: savedUser.id,
+      id: savedUser.id.value,
 
       email: savedUser.email.value,
 

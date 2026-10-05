@@ -3,6 +3,7 @@ import { IdGenerator } from "@/common/ports/id-generator.port";
 import { User } from "@/modules/users/domain/entities/user.entity";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import { Email } from "@/modules/users/domain/value-objects/email.vo";
+import { UserId } from "@/modules/users/domain/value-objects/user-id.vo";
 import type { PasswordHasher } from "../ports/password-hasher.port";
 import type { RefreshTokenRepository } from "../ports/refresh-token.repository";
 import type { TokenService } from "../ports/token-service.port";
@@ -38,7 +39,7 @@ export class RegisterUseCase {
     const passwordHash = await this.passwordHasher.hash(input.password);
 
     const user = User.create({
-      id: this.idGenerator.generate(),
+      id: UserId.create(this.idGenerator.generate()),
 
       email,
 
@@ -50,7 +51,7 @@ export class RegisterUseCase {
     const savedUser = await this.users.create(user);
 
     const accessToken = await this.tokenService.generateAccessToken({
-      sub: savedUser.id,
+      sub: savedUser.id.value,
 
       email: savedUser.email.value,
 
@@ -58,7 +59,7 @@ export class RegisterUseCase {
     });
 
     const generatedRefreshToken = await this.tokenService.generateRefreshToken(
-      savedUser.id,
+      savedUser.id.value,
     );
 
     const refreshTokenHash = await this.passwordHasher.hash(
@@ -68,7 +69,7 @@ export class RegisterUseCase {
     await this.refreshTokens.create({
       id: generatedRefreshToken.sessionId,
 
-      userId: savedUser.id,
+      userId: savedUser.id.value,
 
       tokenHash: refreshTokenHash,
 
@@ -81,7 +82,7 @@ export class RegisterUseCase {
       refreshToken: generatedRefreshToken.token,
 
       user: {
-        id: savedUser.id,
+        id: savedUser.id.value,
 
         email: savedUser.email.value,
 

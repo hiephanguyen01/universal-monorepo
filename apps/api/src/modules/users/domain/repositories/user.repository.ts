@@ -1,6 +1,7 @@
 import type { User } from "../entities/user.entity";
 
 import type { Email } from "../value-objects/email.vo";
+import { UserId } from "../value-objects/user-id.vo";
 
 export interface FindUsersInput {
   skip: number;
@@ -8,7 +9,7 @@ export interface FindUsersInput {
 }
 
 export interface UserRepository {
-  findById(id: string): Promise<User | null>;
+  findById(id: UserId): Promise<User | null>;
 
   findByEmail(email: Email): Promise<User | null>;
 
