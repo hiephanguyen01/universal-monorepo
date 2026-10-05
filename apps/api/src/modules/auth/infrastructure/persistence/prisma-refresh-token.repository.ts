@@ -1,11 +1,6 @@
 import {
-  Inject,
   Injectable,
 } from "@nestjs/common";
-
-import type {
-  PrismaClient,
-} from "@/generated/prisma/client";
 
 import {
   PrismaService,
@@ -18,19 +13,13 @@ import type {
   RotateRefreshTokenInput,
 } from "@/modules/auth/application/ports/refresh-token.repository";
 
-type RefreshTokenPrismaClient = Pick<
-  PrismaClient,
-  "refreshToken" | "$transaction"
->;
-
 @Injectable()
 export class PrismaRefreshTokenRepository
   implements RefreshTokenRepository
 {
   constructor(
-    @Inject(PrismaService)
     private readonly prisma:
-      RefreshTokenPrismaClient,
+      PrismaService,
   ) {}
 
   create(
