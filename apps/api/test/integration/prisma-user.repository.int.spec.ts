@@ -12,20 +12,16 @@ import {
 } from "@/modules/users/application/errors/user-version-conflict.error";
 
 import {
-  User,
-} from "@/modules/users/domain/entities/user.entity";
-
-import {
-  Email,
-} from "@/modules/users/domain/value-objects/email.vo";
-
-import {
   UserId,
 } from "@/modules/users/domain/value-objects/user-id.vo";
 
 import {
   PrismaUserRepository,
 } from "@/modules/users/infrastructure/prisma-user.repository";
+
+import {
+  makeNewUser,
+} from "../factories/user.factory";
 
 import {
   clearDatabase,
@@ -72,19 +68,9 @@ describe(
           );
 
         const user =
-          User.create({
-            id:
-              UserId.create(
-                "user-1",
-              ),
-            email:
-              Email.create(
-                "alice@example.com",
-              ),
+          makeNewUser({
             passwordHash:
               "hash",
-            fullName:
-              "Alice",
             now,
           });
 
@@ -115,19 +101,10 @@ describe(
       "rejects a stale user version",
       async () => {
         const original =
-          User.create({
-            id:
-              UserId.create(
-                "user-1",
-              ),
-            email:
-              Email.create(
-                "alice@example.com",
-              ),
+          makeNewUser({
             passwordHash:
               "hash",
-            fullName:
-              "Alice",
+
             now:
               new Date(
                 "2026-01-01T00:00:00.000Z",
