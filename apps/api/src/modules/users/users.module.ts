@@ -1,3 +1,6 @@
+import { CommonModule } from "@/common/common.module";
+import { CLOCK } from "@/common/common.tokens";
+import type { Clock } from "@/common/ports/clock.port";
 import { AuthModule } from "@/modules/auth/auth.module";
 import { Module } from "@nestjs/common";
 import { UserAccessPolicy } from "./application/policies/user-access.policy";
@@ -11,7 +14,11 @@ import { UsersController } from "./presentation/controllers/users.controller";
 import { USER_REPOSITORY } from "./users.tokens";
 
 @Module({
-  imports: [UsersPersistenceModule, AuthModule],
+  imports: [
+    CommonModule,
+    UsersPersistenceModule,
+    AuthModule,
+  ],
   controllers: [UsersController],
   providers: [
     UserAccessPolicy,
@@ -29,20 +36,32 @@ import { USER_REPOSITORY } from "./users.tokens";
     },
     {
       provide: UpdateCurrentUserUseCase,
-      inject: [USER_REPOSITORY],
-      useFactory: (users: UserRepository) =>
-        new UpdateCurrentUserUseCase(users),
+      inject: [USER_REPOSITORY, CLOCK],
+      useFactory: (
+        users: UserRepository,
+        clock: Clock,
+      ) =>
+        new UpdateCurrentUserUseCase(
+          users,
+          clock,
+        ),
     },
     {
       provide: UpdateUserProfileUseCase,
-      inject: [USER_REPOSITORY, UserAccessPolicy],
+      inject: [
+        USER_REPOSITORY,
+        UserAccessPolicy,
+        CLOCK,
+      ],
       useFactory: (
         users: UserRepository,
         accessPolicy: UserAccessPolicy,
+        clock: Clock,
       ) =>
         new UpdateUserProfileUseCase(
           users,
           accessPolicy,
+          clock,
         ),
     },
   ],
