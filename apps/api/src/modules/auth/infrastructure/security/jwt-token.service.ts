@@ -31,7 +31,7 @@ export class JwtTokenService
       JwtService,
   ) {}
 
-  async generateAccessToken(
+  generateAccessToken(
     payload: AccessTokenPayload,
   ): Promise<string> {
     return this.jwtService.signAsync(
@@ -53,12 +53,9 @@ export class JwtTokenService
       randomUUID();
 
     const expiresAt =
-      new Date();
-
-    expiresAt.setDate(
-      expiresAt.getDate() +
-        30,
-    );
+      this.createExpiresAt(
+        env.JWT_REFRESH_EXPIRES_IN,
+      );
 
     const token =
       await this.jwtService
@@ -109,5 +106,49 @@ export class JwtTokenService
             env.JWT_REFRESH_SECRET,
         },
       );
+  }
+
+  private createExpiresAt(
+    duration: string,
+  ): Date {
+    const amount =
+      Number(
+        duration.slice(
+          0,
+          -1,
+        ),
+      );
+
+    const unit =
+      duration.slice(-1);
+
+    const multipliers = {
+      s: 1_000,
+      m: 60_000,
+      h: 3_600_000,
+      d: 86_400_000,
+    } as const;
+
+    const multiplier =
+      multipliers[
+        unit as keyof typeof multipliers
+      ];
+
+    if (
+      !multiplier ||
+      !Number.isFinite(
+        amount,
+      )
+    ) {
+      throw new Error(
+        "Invalid JWT refresh duration",
+      );
+    }
+
+    return new Date(
+      Date.now() +
+        amount *
+          multiplier,
+    );
   }
 }
