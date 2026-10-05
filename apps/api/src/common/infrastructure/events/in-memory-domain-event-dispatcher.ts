@@ -10,10 +10,16 @@ import type {
   DomainEventDispatcher,
 } from "@/common/ports/domain-event-dispatcher.port";
 
+type EventKey = {
+  readonly prototype:
+    DomainEvent;
+};
+
 type EventConstructor<
   TEvent extends DomainEvent,
-> = Function & {
-  prototype: TEvent;
+> = {
+  readonly prototype:
+    TEvent;
 };
 
 type EventHandler =
@@ -27,7 +33,7 @@ export class InMemoryDomainEventDispatcher
 {
   private readonly handlers =
     new Map<
-      Function,
+      EventKey,
       EventHandler[]
     >();
 
@@ -60,9 +66,13 @@ export class InMemoryDomainEventDispatcher
   async dispatch(
     event: DomainEvent,
   ): Promise<void> {
+    const eventType =
+      event.constructor as unknown as
+        EventKey;
+
     const handlers =
       this.handlers.get(
-        event.constructor,
+        eventType,
       ) ?? [];
 
     await Promise.all(
