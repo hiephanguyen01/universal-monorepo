@@ -1,19 +1,13 @@
 import { ConflictError } from "@/common/errors";
-
+import type { Clock } from "@/common/ports/clock.port";
 import type { IdGenerator } from "@/common/ports/id-generator.port";
-
+import { DuplicateUserEmailError } from "@/modules/users/application/errors/duplicate-user-email.error";
 import { User } from "@/modules/users/domain/entities/user.entity";
-
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
-
 import { Email } from "@/modules/users/domain/value-objects/email.vo";
-
 import { UserId } from "@/modules/users/domain/value-objects/user-id.vo";
-
 import type { PasswordHasher } from "../ports/password-hasher.port";
-
 import type { RegistrationUnitOfWork } from "../ports/registration-unit-of-work.port";
-
 import type { TokenService } from "../ports/token-service.port";
 
 export interface RegisterInput {
@@ -25,14 +19,11 @@ export interface RegisterInput {
 export class RegisterUseCase {
   constructor(
     private readonly users: UserRepository,
-
     private readonly passwordHasher: PasswordHasher,
-
     private readonly tokenService: TokenService,
-
     private readonly registrationUnitOfWork: RegistrationUnitOfWork,
-
     private readonly idGenerator: IdGenerator,
+    private readonly clock: Clock,
   ) {}
 
   async execute(input: RegisterInput) {
@@ -48,19 +39,15 @@ export class RegisterUseCase {
 
     const user = User.create({
       id: UserId.create(this.idGenerator.generate()),
-
       email,
-
       passwordHash,
-
       fullName: input.fullName,
+      now: this.clock.now(),
     });
 
     const accessToken = await this.tokenService.generateAccessToken({
       sub: user.id.value,
-
       email: user.email.value,
-
       role: user.role,
     });
 
@@ -72,38 +59,36 @@ export class RegisterUseCase {
       generatedRefreshToken.token,
     );
 
-    const savedUser = await this.registrationUnitOfWork.execute({
-      user,
+    let savedUser: User;
 
-      refreshToken: {
-        id: generatedRefreshToken.sessionId,
+    try {
+      savedUser = await this.registrationUnitOfWork.execute({
+        user,
+        refreshToken: {
+          id: generatedRefreshToken.sessionId,
+          userId: user.id.value,
+          tokenHash: refreshTokenHash,
+          expiresAt: generatedRefreshToken.expiresAt,
+        },
+      });
+    } catch (error) {
+      if (error instanceof DuplicateUserEmailError) {
+        throw new ConflictError("EMAIL_ALREADY_EXISTS", "Email already exists");
+      }
 
-        userId: user.id.value,
-
-        tokenHash: refreshTokenHash,
-
-        expiresAt: generatedRefreshToken.expiresAt,
-      },
-    });
+      throw error;
+    }
 
     return {
       accessToken,
-
       refreshToken: generatedRefreshToken.token,
-
       user: {
         id: savedUser.id.value,
-
         email: savedUser.email.value,
-
         fullName: savedUser.fullName,
-
         role: savedUser.role,
-
         status: savedUser.status,
-
         createdAt: savedUser.createdAt.toISOString(),
-
         updatedAt: savedUser.updatedAt.toISOString(),
       },
     };
