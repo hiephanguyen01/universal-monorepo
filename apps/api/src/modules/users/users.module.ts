@@ -14,15 +14,18 @@ import { USER_REPOSITORY } from "./users.tokens";
   imports: [UsersPersistenceModule, AuthModule],
   controllers: [UsersController],
   providers: [
+    UserAccessPolicy,
     {
       provide: GetCurrentUserUseCase,
       inject: [USER_REPOSITORY],
-      useFactory: (users: UserRepository) => new GetCurrentUserUseCase(users),
+      useFactory: (users: UserRepository) =>
+        new GetCurrentUserUseCase(users),
     },
     {
       provide: ListUsersUseCase,
       inject: [USER_REPOSITORY],
-      useFactory: (users: UserRepository) => new ListUsersUseCase(users),
+      useFactory: (users: UserRepository) =>
+        new ListUsersUseCase(users),
     },
     {
       provide: UpdateCurrentUserUseCase,
@@ -32,14 +35,15 @@ import { USER_REPOSITORY } from "./users.tokens";
     },
     {
       provide: UpdateUserProfileUseCase,
-
       inject: [USER_REPOSITORY, UserAccessPolicy],
-
       useFactory: (
         users: UserRepository,
-
         accessPolicy: UserAccessPolicy,
-      ) => new UpdateUserProfileUseCase(users, accessPolicy),
+      ) =>
+        new UpdateUserProfileUseCase(
+          users,
+          accessPolicy,
+        ),
     },
   ],
 })
