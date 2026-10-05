@@ -1,46 +1,61 @@
-import { ValidationPipe } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
-import helmet from "helmet";
+import {
+  NestFactory,
+} from "@nestjs/core";
+
+import {
+  DocumentBuilder,
+  SwaggerModule,
+} from "@nestjs/swagger";
+
 import "reflect-metadata";
-import { AppModule } from "./app.module";
-import { ApiResponseInterceptor } from "./common/api-response.interceptor";
-import { AppExceptionFilter } from "./common/app-exception.filter";
-import { env } from "./config/env";
+
+import {
+  AppModule,
+} from "./app.module";
+
+import {
+  configureApp,
+} from "./bootstrap/configure-app";
+
+import {
+  env,
+} from "./config/env";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app =
+    await NestFactory.create(
+      AppModule,
+    );
 
-  app.setGlobalPrefix("api/v1");
-  app.use(helmet());
-  app.enableCors({
-    origin: env.WEB_ORIGIN,
-    credentials: true,
-  });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  app.useGlobalFilters(new AppExceptionFilter());
-  app.useGlobalInterceptors(new ApiResponseInterceptor());
-
-  const doc = SwaggerModule.createDocument(
+  configureApp(
     app,
-    new DocumentBuilder()
-      .setTitle("API")
-      .setVersion("1")
-      .addBearerAuth()
-      .build(),
   );
 
-  SwaggerModule.setup("api/docs", app, doc);
+  const doc =
+    SwaggerModule
+      .createDocument(
+        app,
 
-  await app.listen(env.API_PORT);
+        new DocumentBuilder()
+          .setTitle(
+            "API",
+          )
+          .setVersion(
+            "1",
+          )
+          .addBearerAuth()
+          .build(),
+      );
+
+  SwaggerModule.setup(
+    "api/docs",
+    app,
+    doc,
+  );
+
+  await app.listen(
+    env.API_PORT,
+  );
 }
 
 void bootstrap();
