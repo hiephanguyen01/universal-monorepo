@@ -83,9 +83,6 @@ export class RegisterUseCase {
 
     private readonly clock:
       Clock,
-
-    private readonly events:
-      DomainEventDispatcher,
   ) {}
 
   async execute(
