@@ -131,6 +131,11 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
     RolesGuard,
     PermissionsGuard,
   ],
-  exports: [JwtAuthGuard, RolesGuard, PermissionsGuard],
+  exports: [
+    TOKEN_SERVICE,
+    JwtAuthGuard,
+    RolesGuard,
+    PermissionsGuard,
+  ],
 })
 export class AuthModule {}
