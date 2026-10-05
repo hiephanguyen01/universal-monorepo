@@ -23,6 +23,8 @@ describe("UserMapper", () => {
 
       status: "ACTIVE",
 
+      version: 7,
+
       createdAt: new Date(),
 
       updatedAt: new Date(),
@@ -31,6 +33,8 @@ describe("UserMapper", () => {
     expect(user.id.value).toBe("user-1");
 
     expect(user.email.value).toBe("alice@example.com");
+
+    expect(user.version).toBe(7);
   });
 
   it("maps domain to persistence", () => {
@@ -53,5 +57,7 @@ describe("UserMapper", () => {
     expect(data.id).toBe("user-1");
 
     expect(data.email).toBe("alice@example.com");
+
+    expect(data.version).toBe(0);
   });
 });
