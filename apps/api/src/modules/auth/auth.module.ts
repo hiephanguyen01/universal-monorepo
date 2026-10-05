@@ -1,3 +1,4 @@
+import { ID_GENERATOR } from "@/common/common.tokens";
 import { PrismaModule } from "@/infrastructure/prisma/prisma.module";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import { UsersPersistenceModule } from "@/modules/users/infrastructure/users-persistence.module";
@@ -11,6 +12,9 @@ import { LoginUseCase } from "./application/use-cases/login.use-case";
 import { LogoutUseCase } from "./application/use-cases/logout.use-case";
 import { RefreshTokenUseCase } from "./application/use-cases/refresh-token.use-case";
 import { RegisterUseCase } from "./application/use-cases/register.use-case";
+
+import { UuidIdGenerator } from "@/common/infrastructure/id/uuid-id-generator";
+import { IdGenerator } from "@/common/ports/id-generator.port";
 import {
   PASSWORD_HASHER,
   REFRESH_TOKEN_REPOSITORY,
@@ -41,20 +45,33 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
       useClass: PrismaRefreshTokenRepository,
     },
     {
+      provide: ID_GENERATOR,
+
+      useClass: UuidIdGenerator,
+    },
+    {
       provide: RegisterUseCase,
       inject: [
         USER_REPOSITORY,
         PASSWORD_HASHER,
         TOKEN_SERVICE,
         REFRESH_TOKEN_REPOSITORY,
+        ID_GENERATOR,
       ],
       useFactory: (
         users: UserRepository,
         passwordHasher: PasswordHasher,
         tokenService: TokenService,
         refreshTokens: RefreshTokenRepository,
+        idGenerator: IdGenerator,
       ) =>
-        new RegisterUseCase(users, passwordHasher, tokenService, refreshTokens),
+        new RegisterUseCase(
+          users,
+          passwordHasher,
+          tokenService,
+          refreshTokens,
+          idGenerator,
+        ),
     },
     {
       provide: LoginUseCase,

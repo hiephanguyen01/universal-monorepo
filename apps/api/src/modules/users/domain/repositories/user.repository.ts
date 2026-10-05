@@ -1,7 +1,8 @@
 import type { User, UserRole } from "../entities/user.entity";
+import { Email } from "../value-objects/email.vo";
 
 export interface CreateUserInput {
-  email: string;
+  email: Email;
   passwordHash: string;
   fullName: string;
   role?: UserRole;
@@ -16,7 +17,7 @@ export interface FindUsersInput {
 export interface UserRepository {
   findById(id: string): Promise<User | null>;
 
-  findByEmail(email: string): Promise<User | null>;
+  findByEmail(email: Email): Promise<User | null>;
 
   findMany(input: FindUsersInput): Promise<User[]>;
 

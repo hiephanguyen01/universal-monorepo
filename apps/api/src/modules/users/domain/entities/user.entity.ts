@@ -1,5 +1,7 @@
 import { InvalidUserFullNameError } from "../errors/invalid-user-full-name.error";
 
+import type { Email } from "../value-objects/email.vo";
+
 export type UserRole = "USER" | "ADMIN";
 
 export type UserStatus = "ACTIVE" | "INACTIVE" | "BLOCKED";
@@ -7,7 +9,7 @@ export type UserStatus = "ACTIVE" | "INACTIVE" | "BLOCKED";
 export interface UserProps {
   id: string;
 
-  email: string;
+  email: Email;
 
   passwordHash: string;
 
@@ -22,8 +24,46 @@ export interface UserProps {
   updatedAt: Date;
 }
 
+export interface CreateUserProps {
+  id: string;
+
+  email: Email;
+
+  passwordHash: string;
+
+  fullName: string;
+
+  role?: UserRole;
+
+  now?: Date;
+}
+
 export class User {
   private constructor(private props: UserProps) {}
+
+  static create(input: CreateUserProps): User {
+    const fullName = User.normalizeFullName(input.fullName);
+
+    const now = input.now ?? new Date();
+
+    return new User({
+      id: input.id,
+
+      email: input.email,
+
+      passwordHash: input.passwordHash,
+
+      fullName,
+
+      role: input.role ?? "USER",
+
+      status: "ACTIVE",
+
+      createdAt: now,
+
+      updatedAt: now,
+    });
+  }
 
   static restore(props: UserProps): User {
     return new User({
@@ -35,7 +75,7 @@ export class User {
     return this.props.id;
   }
 
-  get email(): string {
+  get email(): Email {
     return this.props.email;
   }
 
@@ -64,13 +104,7 @@ export class User {
   }
 
   changeFullName(fullName: string): void {
-    const normalized = fullName.trim();
-
-    if (normalized.length < 2 || normalized.length > 100) {
-      throw new InvalidUserFullNameError();
-    }
-
-    this.props.fullName = normalized;
+    this.props.fullName = User.normalizeFullName(fullName);
 
     this.touch();
   }
@@ -97,6 +131,16 @@ export class User {
 
   isActive(): boolean {
     return this.props.status === "ACTIVE";
+  }
+
+  private static normalizeFullName(fullName: string): string {
+    const normalized = fullName.trim();
+
+    if (normalized.length < 2 || normalized.length > 100) {
+      throw new InvalidUserFullNameError();
+    }
+
+    return normalized;
   }
 
   private touch(): void {

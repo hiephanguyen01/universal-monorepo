@@ -1,11 +1,11 @@
 import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 import { User } from "@/modules/users/domain/entities/user.entity";
 import type {
-  CreateUserInput,
   FindUsersInput,
   UserRepository,
 } from "@/modules/users/domain/repositories/user.repository";
 import { Injectable } from "@nestjs/common";
+import { Email } from "../domain/value-objects/email.vo";
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
@@ -25,10 +25,10 @@ export class PrismaUserRepository implements UserRepository {
     return User.restore(record);
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: Email): Promise<User | null> {
     const record = await this.prisma.user.findUnique({
       where: {
-        email,
+        email: email.value,
       },
     });
 
@@ -36,7 +36,7 @@ export class PrismaUserRepository implements UserRepository {
       return null;
     }
 
-    return User.restore(record);
+    return this.toDomain(record);
   }
 
   async findMany(input: FindUsersInput): Promise<User[]> {
@@ -57,20 +57,28 @@ export class PrismaUserRepository implements UserRepository {
     return this.prisma.user.count();
   }
 
-  async create(input: CreateUserInput): Promise<User> {
+  async create(user: User): Promise<User> {
     const record = await this.prisma.user.create({
       data: {
-        email: input.email,
+        id: user.id,
 
-        passwordHash: input.passwordHash,
+        email: user.email.value,
 
-        fullName: input.fullName,
+        passwordHash: user.passwordHash,
 
-        role: input.role ?? "USER",
+        fullName: user.fullName,
+
+        role: user.role,
+
+        status: user.status,
+
+        createdAt: user.createdAt,
+
+        updatedAt: user.updatedAt,
       },
     });
 
-    return User.restore(record);
+    return this.toDomain(record);
   }
 
   async save(user: User): Promise<User> {
