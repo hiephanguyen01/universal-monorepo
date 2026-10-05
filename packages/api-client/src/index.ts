@@ -33,6 +33,10 @@ type RequestOptions = RequestInit & {
 };
 
 export class ApiClient {
+  private refreshPromise:
+    Promise<boolean> | null =
+    null;
+
   constructor(
     private readonly baseUrl: string,
     private readonly tokenStorage: TokenStorage,
