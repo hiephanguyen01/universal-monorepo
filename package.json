@@ -24,7 +24,8 @@
     "test:integration": "pnpm --filter @repo/api test:integration",
     "docker:test:up": "docker compose --profile test up -d --wait postgres-test",
     "docker:test:down": "docker compose --profile test stop postgres-test",
-    "test:e2e": "pnpm --filter @repo/api test:e2e"
+    "test:e2e": "pnpm --filter @repo/api test:e2e",
+    "test:coverage": "pnpm --filter @repo/api test:coverage"
   },
   "devDependencies": {
     "prettier": "^3.0.0",
