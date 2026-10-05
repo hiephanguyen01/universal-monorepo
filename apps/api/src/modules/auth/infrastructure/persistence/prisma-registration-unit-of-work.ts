@@ -115,7 +115,10 @@ export class PrismaRegistrationUnitOfWork
         driverAdapterError,
       )
     ) {
-      return false;
+      return (
+        error.meta?.modelName ===
+        "User"
+      );
     }
 
     const cause =
@@ -127,22 +130,29 @@ export class PrismaRegistrationUnitOfWork
         cause,
       )
     ) {
-      return false;
+      return (
+        error.meta?.modelName ===
+        "User"
+      );
     }
 
     const constraint =
       cause.constraint;
 
     if (
-      !this.isRecord(
+      this.isRecord(
         constraint,
+      ) &&
+      this.containsEmailField(
+        constraint.fields,
       )
     ) {
-      return false;
+      return true;
     }
 
-    return this.containsEmailField(
-      constraint.fields,
+    return (
+      error.meta?.modelName ===
+      "User"
     );
   }
 
