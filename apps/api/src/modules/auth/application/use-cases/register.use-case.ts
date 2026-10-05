@@ -1,10 +1,6 @@
 import { ConflictError } from "@/common/errors";
 
 import type {
-  DomainEventDispatcher,
-} from "@/common/ports/domain-event-dispatcher.port";
-
-import type {
   Clock,
 } from "@/common/ports/clock.port";
 
@@ -119,6 +115,9 @@ export class RegisterUseCase {
           input.password,
         );
 
+    const now =
+      this.clock.now();
+
     const user =
       User.create({
         id:
@@ -134,8 +133,19 @@ export class RegisterUseCase {
         fullName:
           input.fullName,
 
-        now:
-          this.clock.now(),
+        now,
+      });
+
+    const registeredEvent =
+      new UserRegisteredEvent({
+        userId:
+          user.id.value,
+
+        email:
+          user.email.value,
+
+        occurredAt:
+          now,
       });
 
     const accessToken =
@@ -188,6 +198,10 @@ export class RegisterUseCase {
                 generatedRefreshToken
                   .expiresAt,
             },
+
+            events: [
+              registeredEvent,
+            ],
           });
     } catch (error) {
       if (
@@ -203,18 +217,6 @@ export class RegisterUseCase {
       throw error;
     }
 
-    await this.events.dispatch(
-      new UserRegisteredEvent({
-        userId:
-          savedUser.id.value,
-
-        email:
-          savedUser.email.value,
-
-        occurredAt:
-          this.clock.now(),
-      }),
-    );
 
     return {
       accessToken,
