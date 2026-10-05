@@ -12,6 +12,10 @@ import {
 } from "@/modules/auth/infrastructure/persistence/prisma-refresh-token.repository";
 
 import {
+  makePrismaUserData,
+} from "../factories/prisma-user.factory";
+
+import {
   clearDatabase,
   createTestPrisma,
 } from "../helpers/test-database";
@@ -40,30 +44,19 @@ describe(
         );
 
         await prisma.user.create({
-          data: {
-            id:
-              "user-1",
-            email:
-              "alice@example.com",
-            passwordHash:
-              "hash",
-            fullName:
-              "Alice",
-            role:
-              "USER",
-            status:
-              "ACTIVE",
-            version:
-              0,
-            createdAt:
-              new Date(
-                "2026-10-05T10:00:00.000Z",
-              ),
-            updatedAt:
-              new Date(
-                "2026-10-05T10:00:00.000Z",
-              ),
-          },
+          data:
+            makePrismaUserData({
+              passwordHash:
+                "hash",
+              createdAt:
+                new Date(
+                  "2026-10-05T10:00:00.000Z",
+                ),
+              updatedAt:
+                new Date(
+                  "2026-10-05T10:00:00.000Z",
+                ),
+            }),
         });
 
         await prisma.refreshToken.create({
