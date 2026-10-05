@@ -30,6 +30,10 @@ import {
   User,
 } from "../src/modules/users/domain/entities/user.entity";
 
+import {
+  makeUser,
+} from "./factories/user.factory";
+
 import type {
   FindUsersInput,
   UserRepository,
@@ -316,34 +320,7 @@ class InMemoryRefreshTokenRepository
 
 function createFixture() {
   const user =
-    User.restore({
-      id:
-        UserId.create(
-          "user-1",
-        ),
-      email:
-        Email.create(
-          "alice@example.com",
-        ),
-      passwordHash:
-        "hashed-password",
-      fullName:
-        "Alice",
-      role:
-        "USER",
-      status:
-        "ACTIVE",
-      version:
-        0,
-      createdAt:
-        new Date(
-          "2026-01-01T00:00:00.000Z",
-        ),
-      updatedAt:
-        new Date(
-          "2026-01-01T00:00:00.000Z",
-        ),
-    });
+    makeUser();
 
   const refreshTokens =
     new InMemoryRefreshTokenRepository();
