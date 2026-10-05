@@ -19,6 +19,10 @@ import {
   PrismaClient,
 } from "../../src/generated/prisma/client";
 
+import {
+  makePrismaUserData,
+} from "../factories/prisma-user.factory";
+
 const DEFAULT_DATABASE_URL =
   "postgresql://postgres:postgres@localhost:5433/app_test?schema=public";
 
@@ -736,25 +740,22 @@ async function main():
 
         await prisma.user
           .create({
-            data: {
-              id:
-                "admin-1",
-              email:
-                "admin@example.com",
-              passwordHash,
-              fullName:
-                "Admin",
-              role:
-                "ADMIN",
-              status:
-                "ACTIVE",
-              version:
-                0,
-              createdAt:
-                now,
-              updatedAt:
-                now,
-            },
+            data:
+              makePrismaUserData({
+                id:
+                  "admin-1",
+                email:
+                  "admin@example.com",
+                passwordHash,
+                fullName:
+                  "Admin",
+                role:
+                  "ADMIN",
+                createdAt:
+                  now,
+                updatedAt:
+                  now,
+              }),
           });
 
         const login =
