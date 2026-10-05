@@ -9,6 +9,10 @@ import {
 } from "../src/modules/users/domain/entities/user.entity";
 
 import {
+  makeUser,
+} from "./factories/user.factory";
+
+import {
   Email,
 } from "../src/modules/users/domain/value-objects/email.vo";
 
@@ -33,24 +37,10 @@ function restoreUser(
     | "BLOCKED" =
     "ACTIVE",
 ): User {
-  return User.restore({
-    id:
-      UserId.create(
-        "user-1",
-      ),
-    email:
-      Email.create(
-        "alice@example.com",
-      ),
+  return makeUser({
     passwordHash:
       "hash",
-    fullName:
-      "Alice",
-    role:
-      "USER",
     status,
-    version:
-      0,
     createdAt:
       ORIGINAL,
     updatedAt:
