@@ -16,6 +16,10 @@ import {
 } from "@/modules/users/application/errors/duplicate-user-email.error";
 
 import {
+  UserRegisteredEvent,
+} from "@/modules/users/domain/events/user-registered.event";
+
+import {
   makePrismaUserData,
 } from "../factories/prisma-user.factory";
 
@@ -88,6 +92,21 @@ describe(
                 "2026-10-06T10:00:00.000Z",
               ),
           },
+
+          events: [
+            new UserRegisteredEvent({
+              userId:
+                "user-1",
+
+              email:
+                "alice@example.com",
+
+              occurredAt:
+                new Date(
+                  "2026-10-05T10:00:00.000Z",
+                ),
+            }),
+          ],
         });
 
         expect(
@@ -96,6 +115,10 @@ describe(
 
         expect(
           await prisma.refreshToken.count(),
+        ).toBe(1);
+
+        expect(
+          await prisma.outboxEvent.count(),
         ).toBe(1);
       },
     );
@@ -167,6 +190,21 @@ describe(
                   "2026-10-06T10:00:00.000Z",
                 ),
             },
+
+            events: [
+              new UserRegisteredEvent({
+                userId:
+                  "new-user",
+
+                email:
+                  "new@example.com",
+
+                occurredAt:
+                  new Date(
+                    "2026-10-05T10:00:00.000Z",
+                  ),
+              }),
+            ],
           }),
         ).rejects.toThrow();
 
@@ -178,6 +216,10 @@ describe(
             },
           }),
         ).toBeNull();
+
+        expect(
+          await prisma.outboxEvent.count(),
+        ).toBe(0);
       },
     );
 
@@ -233,10 +275,29 @@ describe(
                   "2026-10-06T10:00:00.000Z",
                 ),
             },
+
+            events: [
+              new UserRegisteredEvent({
+                userId:
+                  "new-user",
+
+                email:
+                  "alice@example.com",
+
+                occurredAt:
+                  new Date(
+                    "2026-10-05T10:00:00.000Z",
+                  ),
+              }),
+            ],
           }),
         ).rejects.toBeInstanceOf(
           DuplicateUserEmailError,
         );
+
+        expect(
+          await prisma.outboxEvent.count(),
+        ).toBe(0);
       },
     );
   },
