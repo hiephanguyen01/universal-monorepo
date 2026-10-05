@@ -1,4 +1,5 @@
 import { NotFoundError } from "@/common/errors";
+import type { Clock } from "@/common/ports/clock.port";
 
 import type { UserRepository } from "../../domain/repositories/user.repository";
 import { UserId } from "../../domain/value-objects/user-id.vo";
@@ -18,7 +19,10 @@ export interface UpdateCurrentUserOutput {
 }
 
 export class UpdateCurrentUserUseCase {
-  constructor(private readonly users: UserRepository) {}
+  constructor(
+    private readonly users: UserRepository,
+    private readonly clock: Clock,
+  ) {}
 
   async execute(
     userId: string,
@@ -30,23 +34,17 @@ export class UpdateCurrentUserUseCase {
       throw new NotFoundError("User not found");
     }
 
-    user.changeFullName(input.fullName);
+    user.changeFullName(input.fullName, this.clock.now());
 
     const savedUser = await this.users.save(user);
 
     return {
       id: savedUser.id.value,
-
       email: savedUser.email.value,
-
       fullName: savedUser.fullName,
-
       role: savedUser.role,
-
       status: savedUser.status,
-
       createdAt: savedUser.createdAt.toISOString(),
-
       updatedAt: savedUser.updatedAt.toISOString(),
     };
   }
