@@ -1,8 +1,7 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import { Prisma } from "@/generated/prisma/client";
 import { PrismaService } from "@/infrastructure/prisma/prisma.service";
-import type { PrismaClient } from "@/generated/prisma/client";
 
 import { UserMapper } from "@/modules/users/infrastructure/mappers/user.mapper";
 
@@ -12,13 +11,10 @@ import type {
   RegistrationUnitOfWork,
 } from "../../application/ports/registration-unit-of-work.port";
 
-type RegistrationPrismaClient = Pick<PrismaClient, "$transaction">;
-
 @Injectable()
 export class PrismaRegistrationUnitOfWork implements RegistrationUnitOfWork {
   constructor(
-    @Inject(PrismaService)
-    private readonly prisma: RegistrationPrismaClient,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(input: RegisterTransactionInput) {
