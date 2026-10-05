@@ -12,9 +12,9 @@ import type {
 
 type EventConstructor<
   TEvent extends DomainEvent,
-> = new (
-  ...args: never[]
-) => TEvent;
+> = Function & {
+  prototype: TEvent;
+};
 
 type EventHandler =
   (
