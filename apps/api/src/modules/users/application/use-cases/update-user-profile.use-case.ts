@@ -1,6 +1,7 @@
-import { NotFoundError } from "@/common/errors";
+import { ConflictError, NotFoundError } from "@/common/errors";
 import type { Clock } from "@/common/ports/clock.port";
 
+import { UserVersionConflictError } from "../errors/user-version-conflict.error";
 import type { UserRole } from "../../domain/entities/user.entity";
 import type { UserRepository } from "../../domain/repositories/user.repository";
 import { UserId } from "../../domain/value-objects/user-id.vo";
@@ -13,6 +14,7 @@ export interface UpdateUserActorInput {
 
 export interface UpdateUserProfileInput {
   fullName: string;
+  version: number;
 }
 
 export interface UpdateUserProfileOutput {
@@ -21,6 +23,7 @@ export interface UpdateUserProfileOutput {
   fullName: string;
   role: string;
   status: string;
+  version: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,9 +57,29 @@ export class UpdateUserProfileUseCase {
       throw new NotFoundError("User not found");
     }
 
+    if (user.version !== input.version) {
+      throw new ConflictError(
+        "USER_CONCURRENT_MODIFICATION",
+        "User was modified by another request",
+      );
+    }
+
     user.changeFullName(input.fullName, this.clock.now());
 
-    const savedUser = await this.users.save(user);
+    let savedUser;
+
+    try {
+      savedUser = await this.users.save(user);
+    } catch (error) {
+      if (error instanceof UserVersionConflictError) {
+        throw new ConflictError(
+          "USER_CONCURRENT_MODIFICATION",
+          "User was modified by another request",
+        );
+      }
+
+      throw error;
+    }
 
     return {
       id: savedUser.id.value,
@@ -64,6 +87,7 @@ export class UpdateUserProfileUseCase {
       fullName: savedUser.fullName,
       role: savedUser.role,
       status: savedUser.status,
+      version: savedUser.version,
       createdAt: savedUser.createdAt.toISOString(),
       updatedAt: savedUser.updatedAt.toISOString(),
     };
