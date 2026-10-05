@@ -39,6 +39,10 @@ import {
   Email,
 } from "../src/modules/users/domain/value-objects/email.vo";
 
+import {
+  UserId,
+} from "../src/modules/users/domain/value-objects/user-id.vo";
+
 class InMemoryUserRepository
   implements UserRepository
 {
@@ -48,10 +52,12 @@ class InMemoryUserRepository
   ) {}
 
   findById(
-    id: string,
+    id: UserId,
   ): Promise<User | null> {
     return Promise.resolve(
-      this.user.id === id
+      this.user.id.equals(
+        id,
+      )
         ? this.user
         : null,
     );
@@ -312,7 +318,9 @@ function createFixture() {
   const user =
     User.restore({
       id:
-        "user-1",
+        UserId.create(
+          "user-1",
+        ),
       email:
         Email.create(
           "alice@example.com",
