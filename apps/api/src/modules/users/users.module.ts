@@ -14,55 +14,34 @@ import { UsersController } from "./presentation/controllers/users.controller";
 import { USER_REPOSITORY } from "./users.tokens";
 
 @Module({
-  imports: [
-    CommonModule,
-    UsersPersistenceModule,
-    AuthModule,
-  ],
+  imports: [CommonModule, UsersPersistenceModule, AuthModule],
   controllers: [UsersController],
   providers: [
     UserAccessPolicy,
     {
       provide: GetCurrentUserUseCase,
       inject: [USER_REPOSITORY],
-      useFactory: (users: UserRepository) =>
-        new GetCurrentUserUseCase(users),
+      useFactory: (users: UserRepository) => new GetCurrentUserUseCase(users),
     },
     {
       provide: ListUsersUseCase,
       inject: [USER_REPOSITORY],
-      useFactory: (users: UserRepository) =>
-        new ListUsersUseCase(users),
+      useFactory: (users: UserRepository) => new ListUsersUseCase(users),
     },
     {
       provide: UpdateCurrentUserUseCase,
       inject: [USER_REPOSITORY, CLOCK],
-      useFactory: (
-        users: UserRepository,
-        clock: Clock,
-      ) =>
-        new UpdateCurrentUserUseCase(
-          users,
-          clock,
-        ),
+      useFactory: (users: UserRepository, clock: Clock) =>
+        new UpdateCurrentUserUseCase(users, clock),
     },
     {
       provide: UpdateUserProfileUseCase,
-      inject: [
-        USER_REPOSITORY,
-        UserAccessPolicy,
-        CLOCK,
-      ],
+      inject: [USER_REPOSITORY, UserAccessPolicy, CLOCK],
       useFactory: (
         users: UserRepository,
         accessPolicy: UserAccessPolicy,
         clock: Clock,
-      ) =>
-        new UpdateUserProfileUseCase(
-          users,
-          accessPolicy,
-          clock,
-        ),
+      ) => new UpdateUserProfileUseCase(users, accessPolicy, clock),
     },
   ],
 })

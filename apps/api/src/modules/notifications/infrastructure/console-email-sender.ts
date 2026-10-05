@@ -1,6 +1,4 @@
-import {
-  Injectable,
-} from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 
 import type {
   EmailSender,
@@ -8,16 +6,9 @@ import type {
 } from "../application/ports/email-sender.port";
 
 @Injectable()
-export class ConsoleEmailSender
-  implements EmailSender
-{
-  send(
-    input: SendEmailInput,
-  ): Promise<void> {
-    console.log(
-      "[EMAIL]",
-      input,
-    );
+export class ConsoleEmailSender implements EmailSender {
+  send(input: SendEmailInput): Promise<void> {
+    console.log("[EMAIL]", input);
 
     return Promise.resolve();
   }

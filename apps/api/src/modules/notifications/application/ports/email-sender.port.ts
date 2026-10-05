@@ -5,7 +5,5 @@ export interface SendEmailInput {
 }
 
 export interface EmailSender {
-  send(
-    input: SendEmailInput,
-  ): Promise<void>;
+  send(input: SendEmailInput): Promise<void>;
 }

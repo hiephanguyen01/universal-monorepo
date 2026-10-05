@@ -1,119 +1,61 @@
-import {
-  Inject,
-  Module,
-  type OnModuleInit,
-} from "@nestjs/common";
+import { Inject, Module, type OnModuleInit } from "@nestjs/common";
 
-import {
-  CommonModule,
-} from "@/common/common.module";
+import { CommonModule } from "@/common/common.module";
 
-import {
-  DomainEventRegistry,
-} from "@/common/infrastructure/events/domain-event-registry";
+import { DomainEventRegistry } from "@/common/infrastructure/events/domain-event-registry";
 
-import {
-  InMemoryDomainEventDispatcher,
-} from "@/common/infrastructure/events/in-memory-domain-event-dispatcher";
+import { InMemoryDomainEventDispatcher } from "@/common/infrastructure/events/in-memory-domain-event-dispatcher";
 
-import {
-  UserRegisteredEvent,
-} from "@/modules/users/domain/events/user-registered.event";
+import { UserRegisteredEvent } from "@/modules/users/domain/events/user-registered.event";
 
-import type {
-  EmailSender,
-} from "./application/ports/email-sender.port";
+import type { EmailSender } from "./application/ports/email-sender.port";
 
-import {
-  SendWelcomeEmailHandler,
-} from "./application/handlers/send-welcome-email.handler";
+import { SendWelcomeEmailHandler } from "./application/handlers/send-welcome-email.handler";
 
-import {
-  ConsoleEmailSender,
-} from "./infrastructure/console-email-sender";
+import { ConsoleEmailSender } from "./infrastructure/console-email-sender";
 
-import {
-  EMAIL_SENDER,
-} from "./notifications.tokens";
+import { EMAIL_SENDER } from "./notifications.tokens";
 
 @Module({
-  imports: [
-    CommonModule,
-  ],
+  imports: [CommonModule],
   providers: [
     {
-      provide:
-        EMAIL_SENDER,
-      useClass:
-        ConsoleEmailSender,
+      provide: EMAIL_SENDER,
+      useClass: ConsoleEmailSender,
     },
     {
-      provide:
-        SendWelcomeEmailHandler,
+      provide: SendWelcomeEmailHandler,
 
-      inject: [
-        EMAIL_SENDER,
-      ],
+      inject: [EMAIL_SENDER],
 
-      useFactory: (
-        emails:
-          EmailSender,
-      ) =>
-        new SendWelcomeEmailHandler(
-          emails,
-        ),
+      useFactory: (emails: EmailSender) => new SendWelcomeEmailHandler(emails),
     },
   ],
 })
-export class NotificationsModule
-  implements OnModuleInit
-{
+export class NotificationsModule implements OnModuleInit {
   constructor(
-    @Inject(
-      InMemoryDomainEventDispatcher,
-    )
-    private readonly events:
-      InMemoryDomainEventDispatcher,
+    @Inject(InMemoryDomainEventDispatcher)
+    private readonly events: InMemoryDomainEventDispatcher,
 
-    @Inject(
-      DomainEventRegistry,
-    )
-    private readonly registry:
-      DomainEventRegistry,
+    @Inject(DomainEventRegistry)
+    private readonly registry: DomainEventRegistry,
 
-    @Inject(
-      SendWelcomeEmailHandler,
-    )
-    private readonly welcomeEmail:
-      SendWelcomeEmailHandler,
+    @Inject(SendWelcomeEmailHandler)
+    private readonly welcomeEmail: SendWelcomeEmailHandler,
   ) {}
 
   onModuleInit(): void {
     this.registry.register(
-      UserRegisteredEvent
-        .eventName,
+      UserRegisteredEvent.eventName,
 
-      (
-        payload,
-        occurredAt,
-      ) =>
-        UserRegisteredEvent
-          .fromPrimitives(
-            payload,
-            occurredAt,
-          ),
+      (payload, occurredAt) =>
+        UserRegisteredEvent.fromPrimitives(payload, occurredAt),
     );
 
     this.events.register(
-      UserRegisteredEvent
-        .eventName,
+      UserRegisteredEvent.eventName,
 
-      (event) =>
-        this.welcomeEmail
-          .handle(
-            event as
-              UserRegisteredEvent,
-          ),
+      (event) => this.welcomeEmail.handle(event as UserRegisteredEvent),
     );
   }
 }
