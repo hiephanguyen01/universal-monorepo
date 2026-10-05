@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { RegisterUseCase } from "../src/modules/auth/application/use-cases/register.use-case";
+
+import type { IdGenerator } from "../src/common/ports/id-generator.port";
 import type { PasswordHasher } from "../src/modules/auth/application/ports/password-hasher.port";
 import type {
   CreateRefreshTokenInput,
@@ -12,35 +13,51 @@ import type {
   RefreshTokenPayload,
   TokenService,
 } from "../src/modules/auth/application/ports/token-service.port";
+import { RegisterUseCase } from "../src/modules/auth/application/use-cases/register.use-case";
 import { User } from "../src/modules/users/domain/entities/user.entity";
 import type {
-  CreateUserInput,
-  UpdateUserProfileInput,
+  FindUsersInput,
   UserRepository,
 } from "../src/modules/users/domain/repositories/user.repository";
+import type { Email } from "../src/modules/users/domain/value-objects/email.vo";
 
-class InMemoryUserRepository implements UserRepository {
+class InMemoryUserRepository
+  implements UserRepository
+{
   readonly items: User[] = [];
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.items.find((user) => user.email === email) ?? null;
+  findByEmail(
+    email: Email,
+  ): Promise<User | null> {
+    return Promise.resolve(
+      this.items.find(
+        (user) =>
+          user.email.equals(
+            email,
+          ),
+      ) ?? null,
+    );
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.items.find((user) => user.id === id) ?? null;
+  findById(
+    id: string,
+  ): Promise<User | null> {
+    return Promise.resolve(
+      this.items.find(
+        (user) =>
+          user.id === id,
+      ) ?? null,
+    );
   }
 
-  findMany({
-    skip,
-    take,
-  }: {
-    skip: number;
-    take: number;
-  }): Promise<User[]> {
+  findMany(
+    input: FindUsersInput,
+  ): Promise<User[]> {
     return Promise.resolve(
       this.items.slice(
-        skip,
-        skip + take,
+        input.skip,
+        input.skip +
+          input.take,
       ),
     );
   }
@@ -51,44 +68,51 @@ class InMemoryUserRepository implements UserRepository {
     );
   }
 
-  async create(input: CreateUserInput): Promise<User> {
-    const user = new User({
-      id: "user-1",
-      email: input.email,
-      passwordHash: input.passwordHash,
-      fullName: input.fullName,
-      role: input.role ?? "USER",
-      status: "ACTIVE",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  create(
+    user: User,
+  ): Promise<User> {
+    this.items.push(
+      user,
+    );
 
-    this.items.push(user);
-
-    return user;
+    return Promise.resolve(
+      user,
+    );
   }
 
-  async updateProfile(
-    id: string,
-    input: UpdateUserProfileInput,
+  save(
+    user: User,
   ): Promise<User> {
-    const user = await this.findById(id);
+    const index =
+      this.items.findIndex(
+        (item) =>
+          item.id === user.id,
+      );
 
-    if (!user) {
-      throw new Error("User not found");
+    if (index < 0) {
+      throw new Error(
+        "User not found",
+      );
     }
 
-    return new User({
-      ...user,
-      fullName: input.fullName,
-      updatedAt: new Date(),
-    });
+    this.items[index] =
+      user;
+
+    return Promise.resolve(
+      user,
+    );
   }
 }
 
-class FakePasswordHasher implements PasswordHasher {
-  hash(value: string): Promise<string> {
-    return Promise.resolve(`hashed:${value}`);
+class FakePasswordHasher
+  implements PasswordHasher
+{
+  hash(
+    value: string,
+  ): Promise<string> {
+    return Promise.resolve(
+      `hashed:${value}`,
+    );
   }
 
   compare(
@@ -96,101 +120,278 @@ class FakePasswordHasher implements PasswordHasher {
     hashedValue: string,
   ): Promise<boolean> {
     return Promise.resolve(
-      hashedValue === `hashed:${plainValue}`,
+      hashedValue ===
+        `hashed:${plainValue}`,
     );
   }
 }
 
-class FakeTokenService implements TokenService {
-  generateAccessToken(): Promise<string> {
-    return Promise.resolve("access-token");
+class FakeTokenService
+  implements TokenService
+{
+  generateAccessToken(
+    payload: AccessTokenPayload,
+  ): Promise<string> {
+    void payload;
+
+    return Promise.resolve(
+      "access-token",
+    );
   }
 
-  generateRefreshToken(): Promise<GeneratedRefreshToken> {
+  generateRefreshToken(
+    userId: string,
+  ): Promise<GeneratedRefreshToken> {
+    void userId;
+
     return Promise.resolve({
-      token: "refresh-token",
-      sessionId: "session-1",
-      expiresAt: new Date(Date.now() + 60_000),
+      token:
+        "refresh-token",
+      sessionId:
+        "session-1",
+      expiresAt:
+        new Date(
+          Date.now() +
+            60_000,
+        ),
     });
   }
 
-  verifyAccessToken(): Promise<AccessTokenPayload> {
-    throw new Error("Not implemented");
+  verifyAccessToken(
+    token: string,
+  ): Promise<AccessTokenPayload> {
+    void token;
+
+    throw new Error(
+      "Not implemented",
+    );
   }
 
-  verifyRefreshToken(): Promise<RefreshTokenPayload> {
-    throw new Error("Not implemented");
+  verifyRefreshToken(
+    token: string,
+  ): Promise<RefreshTokenPayload> {
+    void token;
+
+    throw new Error(
+      "Not implemented",
+    );
   }
 }
 
 class InMemoryRefreshTokenRepository
   implements RefreshTokenRepository
 {
-  readonly items = new Map<string, RefreshTokenRecord>();
+  readonly items =
+    new Map<
+      string,
+      RefreshTokenRecord
+    >();
 
-  async create(
+  create(
     input: CreateRefreshTokenInput,
   ): Promise<RefreshTokenRecord> {
-    const record: RefreshTokenRecord = {
+    const record:
+      RefreshTokenRecord = {
       ...input,
       revokedAt: null,
-      createdAt: new Date(),
+      createdAt:
+        new Date(),
     };
 
-    this.items.set(record.id, record);
+    this.items.set(
+      record.id,
+      record,
+    );
 
-    return record;
+    return Promise.resolve(
+      record,
+    );
   }
 
-  async findById(
+  findById(
     id: string,
   ): Promise<RefreshTokenRecord | null> {
-    return this.items.get(id) ?? null;
+    return Promise.resolve(
+      this.items.get(id) ??
+        null,
+    );
   }
 
-  async revoke(id: string): Promise<void> {
-    const record = this.items.get(id);
+  revoke(
+    id: string,
+  ): Promise<void> {
+    const record =
+      this.items.get(id);
 
     if (record) {
-      record.revokedAt = new Date();
+      record.revokedAt =
+        new Date();
     }
+
+    return Promise.resolve();
   }
 
-  async revokeAllByUserId(
+  revokeAllByUserId(
     userId: string,
   ): Promise<void> {
-    for (const record of this.items.values()) {
-      if (record.userId === userId) {
-        record.revokedAt = new Date();
+    for (
+      const record
+      of this.items.values()
+    ) {
+      if (
+        record.userId ===
+        userId
+      ) {
+        record.revokedAt =
+          new Date();
       }
     }
+
+    return Promise.resolve();
   }
 }
 
-describe("RegisterUseCase", () => {
-  it("creates a user and refresh session", async () => {
-    const users = new InMemoryUserRepository();
-    const sessions = new InMemoryRefreshTokenRepository();
+class FakeIdGenerator
+  implements IdGenerator
+{
+  generate(): string {
+    return "user-1";
+  }
+}
 
-    const useCase = new RegisterUseCase(
-      users,
-      new FakePasswordHasher(),
-      new FakeTokenService(),
-      sessions,
+function createUseCase(
+  users:
+    InMemoryUserRepository,
+  sessions:
+    InMemoryRefreshTokenRepository,
+) {
+  return new RegisterUseCase(
+    users,
+    new FakePasswordHasher(),
+    new FakeTokenService(),
+    sessions,
+    new FakeIdGenerator(),
+  );
+}
+
+describe(
+  "RegisterUseCase",
+  () => {
+    it(
+      "creates a normalized user and refresh session",
+      async () => {
+        const users =
+          new InMemoryUserRepository();
+
+        const sessions =
+          new InMemoryRefreshTokenRepository();
+
+        const useCase =
+          createUseCase(
+            users,
+            sessions,
+          );
+
+        const result =
+          await useCase.execute({
+            email:
+              "A@EXAMPLE.COM",
+            password:
+              "password123",
+            fullName:
+              "  Alice  ",
+          });
+
+        expect(
+          result.user.id,
+        ).toBe(
+          "user-1",
+        );
+
+        expect(
+          result.user.email,
+        ).toBe(
+          "a@example.com",
+        );
+
+        expect(
+          result.user.fullName,
+        ).toBe(
+          "Alice",
+        );
+
+        expect(
+          result.user.status,
+        ).toBe(
+          "ACTIVE",
+        );
+
+        expect(
+          users.items[0]
+            ?.passwordHash,
+        ).toBe(
+          "hashed:password123",
+        );
+
+        expect(
+          result.accessToken,
+        ).toBe(
+          "access-token",
+        );
+
+        expect(
+          result.refreshToken,
+        ).toBe(
+          "refresh-token",
+        );
+
+        expect(
+          sessions.items.has(
+            "session-1",
+          ),
+        ).toBe(true);
+      },
     );
 
-    const result = await useCase.execute({
-      email: "A@EXAMPLE.COM",
-      password: "password123",
-      fullName: "Alice",
-    });
+    it(
+      "rejects a duplicate email after normalization",
+      async () => {
+        const users =
+          new InMemoryUserRepository();
 
-    expect(result.user.email).toBe("a@example.com");
-    expect(users.items[0]?.passwordHash).toBe(
-      "hashed:password123",
+        const sessions =
+          new InMemoryRefreshTokenRepository();
+
+        const useCase =
+          createUseCase(
+            users,
+            sessions,
+          );
+
+        await useCase.execute({
+          email:
+            "alice@example.com",
+          password:
+            "password123",
+          fullName:
+            "Alice",
+        });
+
+        await expect(
+          useCase.execute({
+            email:
+              "ALICE@EXAMPLE.COM",
+            password:
+              "password123",
+            fullName:
+              "Alice Two",
+          }),
+        ).rejects.toMatchObject({
+          code:
+            "EMAIL_ALREADY_EXISTS",
+          status: 409,
+        });
+      },
     );
-    expect(result.accessToken).toBe("access-token");
-    expect(result.refreshToken).toBe("refresh-token");
-    expect(sessions.items.has("session-1")).toBe(true);
-  });
-});
+  },
+);
