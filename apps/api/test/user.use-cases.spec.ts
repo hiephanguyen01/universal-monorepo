@@ -13,6 +13,10 @@ import {
 } from "../src/modules/users/application/use-cases/get-current-user.use-case";
 
 import {
+  UserVersionConflictError,
+} from "../src/modules/users/application/errors/user-version-conflict.error";
+
+import {
   ListUsersUseCase,
 } from "../src/modules/users/application/use-cases/list-users.use-case";
 
@@ -53,6 +57,8 @@ class FakeClock
 class InMemoryUserRepository
   implements UserRepository
 {
+  forceConflict = false;
+
   constructor(
     private readonly users:
       User[],
@@ -117,6 +123,10 @@ class InMemoryUserRepository
   save(
     user: User,
   ): Promise<User> {
+    if (this.forceConflict) {
+      throw new UserVersionConflictError();
+    }
+
     const index =
       this.users.findIndex(
         (item) =>
@@ -131,11 +141,33 @@ class InMemoryUserRepository
       );
     }
 
+    const saved =
+      User.restore({
+        id:
+          user.id,
+        email:
+          user.email,
+        passwordHash:
+          user.passwordHash,
+        fullName:
+          user.fullName,
+        role:
+          user.role,
+        status:
+          user.status,
+        version:
+          user.version + 1,
+        createdAt:
+          user.createdAt,
+        updatedAt:
+          user.updatedAt,
+      });
+
     this.users[index] =
-      user;
+      saved;
 
     return Promise.resolve(
-      user,
+      saved,
     );
   }
 }
@@ -266,6 +298,8 @@ describe(
             {
               fullName:
                 "  Alice Updated  ",
+              version:
+                0,
             },
           );
 
@@ -274,6 +308,10 @@ describe(
         ).toBe(
           "Alice Updated",
         );
+
+        expect(
+          result.version,
+        ).toBe(1);
 
         expect(
           result.updatedAt,
@@ -293,6 +331,111 @@ describe(
         ).toBe(
           "Alice Updated",
         );
+      },
+    );
+
+    it(
+      "rejects a stale profile version",
+      async () => {
+        const user =
+          createUser({
+            id:
+              "user-1",
+            email:
+              "alice@example.com",
+            fullName:
+              "Alice",
+            role:
+              "USER",
+            createdAt:
+              "2026-01-01T00:00:00.000Z",
+          });
+
+        const repository =
+          new InMemoryUserRepository(
+            [user],
+          );
+
+        const useCase =
+          new UpdateCurrentUserUseCase(
+            repository,
+            new FakeClock(
+              new Date(
+                "2026-10-05T10:00:00.000Z",
+              ),
+            ),
+          );
+
+        await expect(
+          useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "Alice Updated",
+              version:
+                1,
+            },
+          ),
+        ).rejects.toMatchObject({
+          code:
+            "USER_CONCURRENT_MODIFICATION",
+          status:
+            409,
+        });
+      },
+    );
+
+    it(
+      "maps repository optimistic-lock conflict to 409",
+      async () => {
+        const user =
+          createUser({
+            id:
+              "user-1",
+            email:
+              "alice@example.com",
+            fullName:
+              "Alice",
+            role:
+              "USER",
+            createdAt:
+              "2026-01-01T00:00:00.000Z",
+          });
+
+        const repository =
+          new InMemoryUserRepository(
+            [user],
+          );
+
+        repository.forceConflict =
+          true;
+
+        const useCase =
+          new UpdateCurrentUserUseCase(
+            repository,
+            new FakeClock(
+              new Date(
+                "2026-10-05T10:00:00.000Z",
+              ),
+            ),
+          );
+
+        await expect(
+          useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "Alice Updated",
+              version:
+                0,
+            },
+          ),
+        ).rejects.toMatchObject({
+          code:
+            "USER_CONCURRENT_MODIFICATION",
+          status:
+            409,
+        });
       },
     );
 
