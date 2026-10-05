@@ -120,6 +120,9 @@ const prisma =
 
 async function clearDatabase():
   Promise<void> {
+  await prisma.outboxEvent
+    .deleteMany();
+
   await prisma.refreshToken
     .deleteMany();
 
