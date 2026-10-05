@@ -15,5 +15,21 @@ export default defineConfig({
       "test/integration/**/*.int.spec.ts",
       "test/e2e/**/*.e2e.spec.ts",
     ],
+    coverage: {
+      provider: "v8",
+      reporter: [
+        "text",
+        "json-summary",
+      ],
+      reportsDirectory:
+        "coverage",
+      include: [
+        "src/modules/**/application/use-cases/**/*.ts",
+        "src/modules/**/application/policies/**/*.ts",
+        "src/modules/**/application/mappers/**/*.ts",
+        "src/modules/**/domain/entities/**/*.ts",
+        "src/modules/**/domain/value-objects/**/*.ts",
+      ],
+    },
   },
 });
