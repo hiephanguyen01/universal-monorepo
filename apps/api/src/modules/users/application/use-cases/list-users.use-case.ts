@@ -12,6 +12,7 @@ export interface ListUsersOutput {
     fullName: string;
     role: string;
     status: string;
+    version: number;
     createdAt: string;
     updatedAt: string;
   }>;
@@ -43,12 +44,13 @@ export class ListUsersUseCase {
         fullName: user.fullName,
         role: user.role,
         status: user.status,
+        version: user.version,
         createdAt: user.createdAt.toISOString(),
         updatedAt: user.updatedAt.toISOString(),
       })),
 
       meta: {
-      page: input.page,
+        page: input.page,
         pageSize: input.pageSize,
         total,
         totalPages: Math.ceil(total / input.pageSize),
