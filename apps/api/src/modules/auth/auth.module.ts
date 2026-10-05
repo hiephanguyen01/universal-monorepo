@@ -15,12 +15,15 @@ import { RegisterUseCase } from "./application/use-cases/register.use-case";
 
 import { UuidIdGenerator } from "@/common/infrastructure/id/uuid-id-generator";
 import { IdGenerator } from "@/common/ports/id-generator.port";
+import { RegistrationUnitOfWork } from "./application/ports/registration-unit-of-work.port";
 import {
   PASSWORD_HASHER,
   REFRESH_TOKEN_REPOSITORY,
+  REGISTRATION_UNIT_OF_WORK,
   TOKEN_SERVICE,
 } from "./auth.tokens";
 import { PrismaRefreshTokenRepository } from "./infrastructure/persistence/prisma-refresh-token.repository";
+import { PrismaRegistrationUnitOfWork } from "./infrastructure/persistence/prisma-registration-unit-of-work";
 import { ArgonPasswordHasher } from "./infrastructure/security/argon-password-hasher";
 import { JwtTokenService } from "./infrastructure/security/jwt-token.service";
 import { AuthController } from "./presentation/controllers/auth.controller";
@@ -50,26 +53,31 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
       useClass: UuidIdGenerator,
     },
     {
+      provide: REGISTRATION_UNIT_OF_WORK,
+
+      useClass: PrismaRegistrationUnitOfWork,
+    },
+    {
       provide: RegisterUseCase,
       inject: [
         USER_REPOSITORY,
         PASSWORD_HASHER,
         TOKEN_SERVICE,
-        REFRESH_TOKEN_REPOSITORY,
+        REGISTRATION_UNIT_OF_WORK,
         ID_GENERATOR,
       ],
       useFactory: (
         users: UserRepository,
         passwordHasher: PasswordHasher,
         tokenService: TokenService,
-        refreshTokens: RefreshTokenRepository,
+        registrationUnitOfWork: RegistrationUnitOfWork,
         idGenerator: IdGenerator,
       ) =>
         new RegisterUseCase(
           users,
           passwordHasher,
           tokenService,
-          refreshTokens,
+          registrationUnitOfWork,
           idGenerator,
         ),
     },

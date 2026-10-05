@@ -1,11 +1,19 @@
 import { ConflictError } from "@/common/errors";
+
 import type { IdGenerator } from "@/common/ports/id-generator.port";
+
 import { User } from "@/modules/users/domain/entities/user.entity";
+
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
+
 import { Email } from "@/modules/users/domain/value-objects/email.vo";
+
 import { UserId } from "@/modules/users/domain/value-objects/user-id.vo";
+
 import type { PasswordHasher } from "../ports/password-hasher.port";
-import type { RefreshTokenRepository } from "../ports/refresh-token.repository";
+
+import type { RegistrationUnitOfWork } from "../ports/registration-unit-of-work.port";
+
 import type { TokenService } from "../ports/token-service.port";
 
 export interface RegisterInput {
@@ -22,7 +30,7 @@ export class RegisterUseCase {
 
     private readonly tokenService: TokenService,
 
-    private readonly refreshTokens: RefreshTokenRepository,
+    private readonly registrationUnitOfWork: RegistrationUnitOfWork,
 
     private readonly idGenerator: IdGenerator,
   ) {}
@@ -48,32 +56,34 @@ export class RegisterUseCase {
       fullName: input.fullName,
     });
 
-    const savedUser = await this.users.create(user);
-
     const accessToken = await this.tokenService.generateAccessToken({
-      sub: savedUser.id.value,
+      sub: user.id.value,
 
-      email: savedUser.email.value,
+      email: user.email.value,
 
-      role: savedUser.role,
+      role: user.role,
     });
 
     const generatedRefreshToken = await this.tokenService.generateRefreshToken(
-      savedUser.id.value,
+      user.id.value,
     );
 
     const refreshTokenHash = await this.passwordHasher.hash(
       generatedRefreshToken.token,
     );
 
-    await this.refreshTokens.create({
-      id: generatedRefreshToken.sessionId,
+    const savedUser = await this.registrationUnitOfWork.execute({
+      user,
 
-      userId: savedUser.id.value,
+      refreshToken: {
+        id: generatedRefreshToken.sessionId,
 
-      tokenHash: refreshTokenHash,
+        userId: user.id.value,
 
-      expiresAt: generatedRefreshToken.expiresAt,
+        tokenHash: refreshTokenHash,
+
+        expiresAt: generatedRefreshToken.expiresAt,
+      },
     });
 
     return {
