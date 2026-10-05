@@ -1,5 +1,5 @@
 import { ConflictError } from "@/common/errors";
-import { IdGenerator } from "@/common/ports/id-generator.port";
+import type { IdGenerator } from "@/common/ports/id-generator.port";
 import { User } from "@/modules/users/domain/entities/user.entity";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
 import { Email } from "@/modules/users/domain/value-objects/email.vo";
