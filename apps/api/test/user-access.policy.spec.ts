@@ -1,4 +1,5 @@
 import { UserAccessPolicy } from "@/modules/users/application/policies/user-access.policy";
+import { UserId } from "@/modules/users/domain/value-objects/user-id.vo";
 import { describe, expect, it } from "vitest";
 
 describe("UserAccessPolicy", () => {
@@ -8,11 +9,10 @@ describe("UserAccessPolicy", () => {
     expect(
       policy.canUpdateProfile(
         {
-          id: "user-1",
+          id: UserId.create("user-1"),
           role: "USER",
         },
-
-        "user-1",
+        UserId.create("user-1"),
       ),
     ).toBe(true);
   });
@@ -21,11 +21,10 @@ describe("UserAccessPolicy", () => {
     expect(
       policy.canUpdateProfile(
         {
-          id: "user-1",
+          id: UserId.create("user-1"),
           role: "USER",
         },
-
-        "user-2",
+        UserId.create("user-2"),
       ),
     ).toBe(false);
   });
@@ -34,11 +33,10 @@ describe("UserAccessPolicy", () => {
     expect(
       policy.canUpdateProfile(
         {
-          id: "admin-1",
+          id: UserId.create("admin-1"),
           role: "ADMIN",
         },
-
-        "user-2",
+        UserId.create("user-2"),
       ),
     ).toBe(true);
   });
