@@ -9,6 +9,10 @@ import {
 } from "@/common/common.module";
 
 import {
+  DomainEventRegistry,
+} from "@/common/infrastructure/events/domain-event-registry";
+
+import {
   InMemoryDomainEventDispatcher,
 } from "@/common/infrastructure/events/in-memory-domain-event-dispatcher";
 
@@ -72,6 +76,12 @@ export class NotificationsModule
       InMemoryDomainEventDispatcher,
 
     @Inject(
+      DomainEventRegistry,
+    )
+    private readonly registry:
+      DomainEventRegistry,
+
+    @Inject(
       SendWelcomeEmailHandler,
     )
     private readonly welcomeEmail:
@@ -79,13 +89,30 @@ export class NotificationsModule
   ) {}
 
   onModuleInit(): void {
+    this.registry.register(
+      UserRegisteredEvent
+        .eventName,
+
+      (
+        payload,
+        occurredAt,
+      ) =>
+        UserRegisteredEvent
+          .fromPrimitives(
+            payload,
+            occurredAt,
+          ),
+    );
+
     this.events.register(
-      UserRegisteredEvent,
+      UserRegisteredEvent
+        .eventName,
 
       (event) =>
         this.welcomeEmail
           .handle(
-            event,
+            event as
+              UserRegisteredEvent,
           ),
     );
   }
