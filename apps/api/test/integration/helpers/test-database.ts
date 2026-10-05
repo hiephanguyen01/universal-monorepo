@@ -1,32 +1,13 @@
 import {
-  PrismaPg,
-} from "@prisma/adapter-pg";
+  PrismaService,
+} from "@/infrastructure/prisma/prisma.service";
 
-import {
-  PrismaClient,
-} from "@/generated/prisma/client";
-
-const DEFAULT_TEST_DATABASE_URL =
-  "postgresql://postgres:postgres@localhost:5433/app_test?schema=public";
-
-export function createTestPrisma(): PrismaClient {
-  const databaseUrl =
-    process.env.TEST_DATABASE_URL ??
-    DEFAULT_TEST_DATABASE_URL;
-
-  const adapter =
-    new PrismaPg({
-      connectionString:
-        databaseUrl,
-    });
-
-  return new PrismaClient({
-    adapter,
-  });
+export function createTestPrisma(): PrismaService {
+  return new PrismaService();
 }
 
 export async function clearDatabase(
-  prisma: PrismaClient,
+  prisma: PrismaService,
 ): Promise<void> {
   await prisma.refreshToken
     .deleteMany();
