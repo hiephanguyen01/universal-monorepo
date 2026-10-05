@@ -3,6 +3,7 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
 } from "@nestjs/common";
 
@@ -37,15 +38,19 @@ import {
 @Controller("auth")
 export class AuthController {
   constructor(
+    @Inject(RegisterUseCase)
     private readonly registerUseCase:
       RegisterUseCase,
 
+    @Inject(LoginUseCase)
     private readonly loginUseCase:
       LoginUseCase,
 
+    @Inject(RefreshTokenUseCase)
     private readonly refreshTokenUseCase:
       RefreshTokenUseCase,
 
+    @Inject(LogoutUseCase)
     private readonly logoutUseCase:
       LogoutUseCase,
   ) {}
