@@ -1,5 +1,6 @@
 import { ConflictError } from "@/common/errors";
 import type { Clock } from "@/common/ports/clock.port";
+import { DomainEventDispatcher } from "@/common/ports/domain-event-dispatcher.port";
 import type { IdGenerator } from "@/common/ports/id-generator.port";
 import { UserOutput } from "@/modules/users/application/dto/user-output";
 import { DuplicateUserEmailError } from "@/modules/users/application/errors/duplicate-user-email.error";
@@ -32,6 +33,7 @@ export class RegisterUseCase {
     private readonly registrationUnitOfWork: RegistrationUnitOfWork,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
+    private readonly events: DomainEventDispatcher,
   ) {}
 
   async execute(input: RegisterInput): Promise<RegisterOutput> {
