@@ -1,10 +1,15 @@
 import {
+  Inject,
   Injectable,
 } from "@nestjs/common";
 
 import type {
   PrismaClient,
 } from "@/generated/prisma/client";
+
+import {
+  PrismaService,
+} from "@/infrastructure/prisma/prisma.service";
 
 import type {
   CreateRefreshTokenInput,
@@ -23,6 +28,7 @@ export class PrismaRefreshTokenRepository
   implements RefreshTokenRepository
 {
   constructor(
+    @Inject(PrismaService)
     private readonly prisma:
       RefreshTokenPrismaClient,
   ) {}
