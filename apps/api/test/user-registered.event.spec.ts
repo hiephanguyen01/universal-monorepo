@@ -34,6 +34,37 @@ describe(
         expect(
           event,
         ).toMatchObject({
+          eventName:
+            UserRegisteredEvent
+              .eventName,
+
+          userId:
+            "user-1",
+
+          email:
+            "alice@example.com",
+
+          occurredAt:
+            now,
+        });
+
+        expect(
+          event.toPrimitives(),
+        ).toEqual({
+          userId:
+            "user-1",
+
+          email:
+            "alice@example.com",
+        });
+
+        expect(
+          UserRegisteredEvent
+            .fromPrimitives(
+              event.toPrimitives(),
+              now,
+            ),
+        ).toMatchObject({
           userId:
             "user-1",
 
