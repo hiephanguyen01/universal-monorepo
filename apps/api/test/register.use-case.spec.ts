@@ -5,10 +5,6 @@ import {
 } from "vitest";
 
 import type {
-  Clock,
-} from "../src/common/ports/clock.port";
-
-import type {
   IdGenerator,
 } from "../src/common/ports/id-generator.port";
 
@@ -57,18 +53,9 @@ import type {
   UserId,
 } from "../src/modules/users/domain/value-objects/user-id.vo";
 
-class FakeClock
-  implements Clock
-{
-  constructor(
-    private readonly current:
-      Date,
-  ) {}
-
-  now(): Date {
-    return this.current;
-  }
-}
+import {
+  FakeClock,
+} from "./fakes/fake-clock";
 
 class InMemoryUserRepository
   implements UserRepository
