@@ -29,7 +29,8 @@ describe(
           );
 
         dispatcher.register(
-          UserRegisteredEvent,
+          UserRegisteredEvent
+            .eventName,
           handler,
         );
 
