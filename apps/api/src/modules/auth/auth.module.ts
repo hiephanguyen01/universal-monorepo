@@ -1,13 +1,9 @@
 import { CommonModule } from "@/common/common.module";
 import {
   CLOCK,
-  DOMAIN_EVENT_DISPATCHER,
   ID_GENERATOR,
 } from "@/common/common.tokens";
 import type { Clock } from "@/common/ports/clock.port";
-import type {
-  DomainEventDispatcher,
-} from "@/common/ports/domain-event-dispatcher.port";
 import type { IdGenerator } from "@/common/ports/id-generator.port";
 import { PrismaModule } from "@/infrastructure/prisma/prisma.module";
 import type { UserRepository } from "@/modules/users/domain/repositories/user.repository";
@@ -72,7 +68,6 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
         REGISTRATION_UNIT_OF_WORK,
         ID_GENERATOR,
         CLOCK,
-        DOMAIN_EVENT_DISPATCHER,
       ],
       useFactory: (
         users: UserRepository,
@@ -81,7 +76,6 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
         registrationUnitOfWork: RegistrationUnitOfWork,
         idGenerator: IdGenerator,
         clock: Clock,
-        events: DomainEventDispatcher,
       ) =>
         new RegisterUseCase(
           users,
@@ -90,7 +84,6 @@ import { RolesGuard } from "./presentation/guards/roles.guard";
           registrationUnitOfWork,
           idGenerator,
           clock,
-          events,
         ),
     },
     {
