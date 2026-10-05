@@ -14085,3 +14085,24 @@ snapshots:
       string-width: 5.1.2
       strip-ansi: 7.1.2
 
+  '@bcoe/v8-coverage@1.0.2': {}
+
+  istanbul-lib-coverage@3.2.2: {}
+
+  html-escaper@2.0.2: {}
+
+  '@jridgewell/sourcemap-codec@1.5.5': {}
+
+  '@types/estree@1.0.8': {}
+
+  '@babel/helper-string-parser@7.27.1': {}
+
+  '@babel/helper-validator-identifier@7.28.5': {}
+
+  package-json-from-dist@1.0.1: {}
+
+  eastasianwidth@0.2.0: {}
+
+  ansi-regex@6.2.2: {}
+
+  ansi-styles@6.2.3: {}
