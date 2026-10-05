@@ -88,6 +88,7 @@ export class RegisterUseCase {
         fullName: savedUser.fullName,
         role: savedUser.role,
         status: savedUser.status,
+        version: savedUser.version,
         createdAt: savedUser.createdAt.toISOString(),
         updatedAt: savedUser.updatedAt.toISOString(),
       },
