@@ -89,8 +89,16 @@ export class PrismaCurrentUserUpdateUnitOfWork
               },
             },
             data: {
-              response:
-                output as Prisma.InputJsonObject,
+              response: {
+                id: output.id,
+                email: output.email,
+                fullName: output.fullName,
+                role: output.role,
+                status: output.status,
+                version: output.version,
+                createdAt: output.createdAt,
+                updatedAt: output.updatedAt,
+              },
             },
           });
 
