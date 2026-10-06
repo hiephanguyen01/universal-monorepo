@@ -1,6 +1,4 @@
-import {
-  PrismaService,
-} from "@/infrastructure/prisma/prisma.service";
+import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 
 export function createTestPrisma(): PrismaService {
   return new PrismaService();
@@ -9,12 +7,8 @@ export function createTestPrisma(): PrismaService {
 export async function clearDatabase(
   prisma: PrismaService,
 ): Promise<void> {
-  await prisma.outboxEvent
-    .deleteMany();
-
-  await prisma.refreshToken
-    .deleteMany();
-
-  await prisma.user
-    .deleteMany();
+  await prisma.inboxEvent.deleteMany();
+  await prisma.outboxEvent.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.user.deleteMany();
 }

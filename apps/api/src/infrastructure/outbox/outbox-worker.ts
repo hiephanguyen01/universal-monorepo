@@ -5,28 +5,21 @@ import {
   type OnModuleInit,
 } from "@nestjs/common";
 
-import { DOMAIN_EVENT_DISPATCHER } from "@/common/common.tokens";
-
+import { DomainEventHandlerRegistry } from "@/common/infrastructure/events/domain-event-handler-registry";
 import { DomainEventRegistry } from "@/common/infrastructure/events/domain-event-registry";
-
-import type { DomainEventDispatcher } from "@/common/ports/domain-event-dispatcher.port";
-
 import { PrismaService } from "@/infrastructure/prisma/prisma.service";
 
+import { InboxProcessor } from "./inbox-processor";
+
 const POLL_INTERVAL_MS = 1_000;
-
 const CLAIM_TIMEOUT_MS = 60_000;
-
 const MAX_ATTEMPTS = 5;
-
 const BASE_RETRY_MS = 5_000;
-
 const MAX_RETRY_MS = 60_000;
 
 @Injectable()
 export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
   private timer: ReturnType<typeof setInterval> | null = null;
-
   private running = false;
 
   constructor(
@@ -36,8 +29,11 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
     @Inject(DomainEventRegistry)
     private readonly registry: DomainEventRegistry,
 
-    @Inject(DOMAIN_EVENT_DISPATCHER)
-    private readonly dispatcher: DomainEventDispatcher,
+    @Inject(DomainEventHandlerRegistry)
+    private readonly handlers: DomainEventHandlerRegistry,
+
+    @Inject(InboxProcessor)
+    private readonly inbox: InboxProcessor,
   ) {}
 
   onModuleInit(): void {
@@ -51,7 +47,6 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
   onModuleDestroy(): void {
     if (this.timer) {
       clearInterval(this.timer);
-
       this.timer = null;
     }
   }
@@ -62,13 +57,10 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
     const events = await this.prisma.outboxEvent.findMany({
       where: {
         processedAt: null,
-
         failedAt: null,
-
         nextAttemptAt: {
           lte: now,
         },
-
         OR: [
           {
             processingAt: null,
@@ -80,11 +72,9 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
           },
         ],
       },
-
       orderBy: {
         createdAt: "asc",
       },
-
       take: 20,
     });
 
@@ -92,15 +82,11 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
       const claimed = await this.prisma.outboxEvent.updateMany({
         where: {
           id: event.id,
-
           processedAt: null,
-
           failedAt: null,
-
           nextAttemptAt: {
             lte: now,
           },
-
           OR: [
             {
               processingAt: null,
@@ -112,10 +98,8 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
             },
           ],
         },
-
         data: {
           processingAt: now,
-
           attempts: {
             increment: 1,
           },
@@ -135,27 +119,31 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
           event.occurredAt,
         );
 
-        await this.dispatcher.dispatch(domainEvent);
+        const handlers = this.handlers.getHandlers(event.eventName);
+
+        for (const handler of handlers) {
+          await this.inbox.process(
+            event.id,
+            domainEvent,
+            handler,
+            now,
+          );
+        }
 
         await this.prisma.outboxEvent.update({
           where: {
             id: event.id,
           },
-
           data: {
             processedAt: now,
-
             processingAt: null,
-
             lastError: null,
           },
         });
       } catch (error) {
         const failed = attempt >= MAX_ATTEMPTS;
-
         const retryDelay = Math.min(
           MAX_RETRY_MS,
-
           BASE_RETRY_MS * 2 ** Math.max(0, attempt - 1),
         );
 
@@ -163,14 +151,10 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
           where: {
             id: event.id,
           },
-
           data: {
             processingAt: null,
-
             lastError: this.getErrorMessage(error),
-
             failedAt: failed ? now : null,
-
             nextAttemptAt: new Date(now.getTime() + retryDelay),
           },
         });
@@ -196,7 +180,6 @@ export class OutboxWorker implements OnModuleInit, OnModuleDestroy {
 
   private getErrorMessage(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error);
-
     return message.slice(0, 2_000);
   }
 }

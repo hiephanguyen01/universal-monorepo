@@ -1,15 +1,8 @@
 import type { DomainEvent } from "./domain-event";
-
-import type { DomainEventHandlerContext } from "./domain-event-handler-context";
+import type { DomainEventHandler } from "./domain-event-handler";
 
 export interface RegisteredDomainEventHandler<
   TEvent extends DomainEvent = DomainEvent,
-> {
+> extends DomainEventHandler<TEvent> {
   readonly handlerName: string;
-
-  handle(
-    event: TEvent,
-
-    context: DomainEventHandlerContext,
-  ): Promise<void>;
 }

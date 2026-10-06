@@ -118,16 +118,11 @@ const prisma =
     adapter,
   });
 
-async function clearDatabase():
-  Promise<void> {
-  await prisma.outboxEvent
-    .deleteMany();
-
-  await prisma.refreshToken
-    .deleteMany();
-
-  await prisma.user
-    .deleteMany();
+async function clearDatabase(): Promise<void> {
+  await prisma.inboxEvent.deleteMany();
+  await prisma.outboxEvent.deleteMany();
+  await prisma.refreshToken.deleteMany();
+  await prisma.user.deleteMany();
 }
 
 async function requestJson<T>(
@@ -506,6 +501,21 @@ async function main():
         assert.ok(
           outboxEvent
             .processedAt,
+        );
+
+        const inboxEvent =
+          await prisma.inboxEvent
+            .findFirstOrThrow();
+
+        assert.ok(
+          inboxEvent
+            .processedAt,
+        );
+
+        assert.equal(
+          inboxEvent
+            .handlerName,
+          "notifications.send-welcome-email.v1",
         );
       },
     );
