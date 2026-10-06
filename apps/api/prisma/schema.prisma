@@ -70,3 +70,25 @@ model OutboxEvent {
   @@index([processingAt])
   @@index([createdAt])
 }
+
+model InboxEvent {
+  id           String   @id @default(cuid())
+
+  eventId      String
+  handlerName  String
+
+  processingAt DateTime?
+  processedAt  DateTime?
+
+  attempts     Int      @default(0)
+
+  lastError    String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([eventId, handlerName])
+
+  @@index([processedAt])
+  @@index([processingAt])
+}

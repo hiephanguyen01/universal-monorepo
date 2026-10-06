@@ -10,6 +10,8 @@ import { SystemClock } from "./infrastructure/time/system-clock";
 
 import { CLOCK, DOMAIN_EVENT_DISPATCHER, ID_GENERATOR } from "./common.tokens";
 
+import { DomainEventHandlerRegistry } from "./infrastructure/events/domain-event-handler-registry";
+
 @Module({
   providers: [
     {
@@ -26,6 +28,9 @@ import { CLOCK, DOMAIN_EVENT_DISPATCHER, ID_GENERATOR } from "./common.tokens";
       provide: DOMAIN_EVENT_DISPATCHER,
       useExisting: InMemoryDomainEventDispatcher,
     },
+    DomainEventRegistry,
+
+    DomainEventHandlerRegistry,
   ],
   exports: [
     ID_GENERATOR,
@@ -33,6 +38,9 @@ import { CLOCK, DOMAIN_EVENT_DISPATCHER, ID_GENERATOR } from "./common.tokens";
     DOMAIN_EVENT_DISPATCHER,
     DomainEventRegistry,
     InMemoryDomainEventDispatcher,
+    DomainEventRegistry,
+
+    DomainEventHandlerRegistry,
   ],
 })
 export class CommonModule {}

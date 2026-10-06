@@ -1,31 +1,17 @@
-import {
-  Module,
-} from "@nestjs/common";
+import { Module } from "@nestjs/common";
 
-import {
-  CommonModule,
-} from "@/common/common.module";
+import { CommonModule } from "@/common/common.module";
 
-import {
-  PrismaModule,
-} from "@/infrastructure/prisma/prisma.module";
+import { PrismaModule } from "@/infrastructure/prisma/prisma.module";
 
-import {
-  OutboxWorker,
-} from "./outbox-worker";
+import { InboxProcessor } from "./inbox-processor";
+import { OutboxWorker } from "./outbox-worker";
 
 @Module({
-  imports: [
-    CommonModule,
-    PrismaModule,
-  ],
+  imports: [CommonModule, PrismaModule],
 
-  providers: [
-    OutboxWorker,
-  ],
+  providers: [InboxProcessor, OutboxWorker],
 
-  exports: [
-    OutboxWorker,
-  ],
+  exports: [OutboxWorker],
 })
 export class OutboxModule {}
