@@ -8,6 +8,13 @@ export class AppError extends Error {
     super(message);
   }
 }
+
+export class BadRequestError extends AppError {
+  constructor(code: string, message: string) {
+    super(code, message, 400);
+  }
+}
+
 export class ConflictError extends AppError {
   constructor(code: string, message: string) {
     super(code, message, 409);
