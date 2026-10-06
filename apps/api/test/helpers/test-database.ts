@@ -7,6 +7,7 @@ export function createTestPrisma(): PrismaService {
 export async function clearDatabase(
   prisma: PrismaService,
 ): Promise<void> {
+  await prisma.idempotencyRecord.deleteMany();
   await prisma.inboxEvent.deleteMany();
   await prisma.outboxEvent.deleteMany();
   await prisma.refreshToken.deleteMany();

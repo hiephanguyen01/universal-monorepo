@@ -1,0 +1,7 @@
+export const IDEMPOTENCY_REPOSITORY = Symbol(
+  "IDEMPOTENCY_REPOSITORY",
+);
+
+export const PAYLOAD_HASHER = Symbol(
+  "PAYLOAD_HASHER",
+);

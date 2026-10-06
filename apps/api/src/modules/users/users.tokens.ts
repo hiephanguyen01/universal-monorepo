@@ -1,1 +1,8 @@
-export const USER_REPOSITORY = Symbol("USER_REPOSITORY");
+export const USER_REPOSITORY = Symbol(
+  "USER_REPOSITORY",
+);
+
+export const CURRENT_USER_UPDATE_UNIT_OF_WORK =
+  Symbol(
+    "CURRENT_USER_UPDATE_UNIT_OF_WORK",
+  );
