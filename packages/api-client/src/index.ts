@@ -262,16 +262,29 @@ export class ApiClient {
 
     updateMe: (
       input: UpdateProfileInput,
-    ) =>
-      this.request<UserDto>(
+      options: {
+        idempotencyKey?: string;
+      } = {},
+    ) => {
+      const headers =
+        options.idempotencyKey
+          ? {
+              "Idempotency-Key":
+                options.idempotencyKey,
+            }
+          : undefined;
+
+      return this.request<UserDto>(
         "/users/me",
         {
           method: "PATCH",
+          headers,
           body: JSON.stringify(
             input,
           ),
         },
-      ),
+      );
+    },
 
     updateById: (
       userId: string,
