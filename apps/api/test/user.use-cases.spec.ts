@@ -607,8 +607,10 @@ class FakePayloadHasher
   ) {}
 
   hash(
-    _payload: unknown,
+    payload: unknown,
   ): string {
+    void payload;
+
     return this.value;
   }
 }
