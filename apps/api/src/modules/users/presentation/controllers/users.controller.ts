@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 
+import { BadRequestError } from "@/common/errors";
 import { PERMISSIONS } from "@/modules/auth/authorization/permissions";
 import { CurrentUser } from "@/modules/auth/presentation/decorators/current-user.decorator";
 import { Permissions } from "@/modules/auth/presentation/decorators/permissions.decorator";
@@ -83,6 +84,16 @@ export class UsersController {
     const key =
       idempotencyKey?.trim();
 
+    if (
+      key &&
+      key.length > 200
+    ) {
+      throw new BadRequestError(
+        "IDEMPOTENCY_KEY_INVALID",
+        "Idempotency-Key must be at most 200 characters",
+      );
+    }
+
     return this.updateCurrentUser.execute(
       user.id,
       {
@@ -91,9 +102,7 @@ export class UsersController {
         version:
           dto.version,
       },
-      key && key.length <= 200
-        ? key
-        : undefined,
+      key || undefined,
     );
   }
 
