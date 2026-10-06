@@ -119,6 +119,7 @@ const prisma =
   });
 
 async function clearDatabase(): Promise<void> {
+  await prisma.idempotencyRecord.deleteMany();
   await prisma.inboxEvent.deleteMany();
   await prisma.outboxEvent.deleteMany();
   await prisma.refreshToken.deleteMany();
@@ -131,6 +132,7 @@ async function requestJson<T>(
   options: {
     body?: unknown;
     accessToken?: string;
+    idempotencyKey?: string;
   } = {},
 ): Promise<HttpResult<T>> {
   const headers:
@@ -153,6 +155,13 @@ async function requestJson<T>(
   ) {
     headers.Authorization =
       `Bearer ${options.accessToken}`;
+  }
+
+  if (
+    options.idempotencyKey
+  ) {
+    headers["Idempotency-Key"] =
+      options.idempotencyKey;
   }
 
   const response =
@@ -711,6 +720,120 @@ async function main():
           stale.body.error
             .code,
           "USER_CONCURRENT_MODIFICATION",
+        );
+      },
+    );
+
+    await runTest(
+      "replays current-user updates by idempotency key",
+      async () => {
+        const session =
+          await registerUser();
+
+        const first =
+          await requestJson<
+            SuccessBody<UserBody>
+          >(
+            "PATCH",
+            "/api/v1/users/me",
+            {
+              accessToken:
+                session
+                  .accessToken,
+              idempotencyKey:
+                "profile-update-1",
+              body: {
+                fullName:
+                  "Alice Smith",
+                version:
+                  0,
+              },
+            },
+          );
+
+        assertStatus(
+          first,
+          200,
+        );
+
+        const replay =
+          await requestJson<
+            SuccessBody<UserBody>
+          >(
+            "PATCH",
+            "/api/v1/users/me",
+            {
+              accessToken:
+                session
+                  .accessToken,
+              idempotencyKey:
+                "profile-update-1",
+              body: {
+                fullName:
+                  "Alice Smith",
+                version:
+                  0,
+              },
+            },
+          );
+
+        assertStatus(
+          replay,
+          200,
+        );
+
+        assert.deepEqual(
+          replay.body.data,
+          first.body.data,
+        );
+
+        assert.equal(
+          await prisma.user
+            .findFirstOrThrow()
+            .then(
+              (user) =>
+                user.version,
+            ),
+          1,
+        );
+
+        assert.equal(
+          await prisma
+            .idempotencyRecord
+            .count(),
+          1,
+        );
+
+        const conflict =
+          await requestJson<
+            ErrorBody
+          >(
+            "PATCH",
+            "/api/v1/users/me",
+            {
+              accessToken:
+                session
+                  .accessToken,
+              idempotencyKey:
+                "profile-update-1",
+              body: {
+                fullName:
+                  "Alice Nguyen",
+                version:
+                  0,
+              },
+            },
+          );
+
+        assertStatus(
+          conflict,
+          409,
+        );
+
+        assert.equal(
+          conflict.body.error
+            .code,
+          "IDEMPOTENCY_KEY_REUSED",
         );
       },
     );
