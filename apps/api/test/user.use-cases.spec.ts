@@ -4,6 +4,26 @@ import {
   it,
 } from "vitest";
 
+import { DuplicateIdempotencyKeyError } from "../src/common/idempotency/duplicate-idempotency-key.error";
+
+import type {
+  IdempotencyRecord,
+  IdempotencyRepository,
+} from "../src/common/ports/idempotency-repository.port";
+
+import type {
+  PayloadHasher,
+} from "../src/common/ports/payload-hasher.port";
+
+import type {
+  UserOutput,
+} from "../src/modules/users/application/dto/user-output";
+
+import type {
+  CurrentUserUpdateTransactionInput,
+  CurrentUserUpdateUnitOfWork,
+} from "../src/modules/users/application/ports/current-user-update-unit-of-work.port";
+
 import {
   GetCurrentUserUseCase,
 } from "../src/modules/users/application/use-cases/get-current-user.use-case";
@@ -542,6 +562,440 @@ describe(
           total: 2,
           totalPages: 2,
         });
+      },
+    );
+  },
+);
+
+
+class FakeIdempotencyRepository
+  implements IdempotencyRepository
+{
+  readonly calls:
+    Array<{
+      scope: string;
+      key: string;
+    }> = [];
+
+  records:
+    Array<
+      IdempotencyRecord | null
+    > = [];
+
+  find(
+    scope: string,
+    key: string,
+  ): Promise<IdempotencyRecord | null> {
+    this.calls.push({
+      scope,
+      key,
+    });
+
+    return Promise.resolve(
+      this.records.shift() ??
+        null,
+    );
+  }
+}
+
+class FakePayloadHasher
+  implements PayloadHasher
+{
+  constructor(
+    private readonly value:
+      string,
+  ) {}
+
+  hash(
+    _payload: unknown,
+  ): string {
+    return this.value;
+  }
+}
+
+class FakeCurrentUserUpdateUnitOfWork
+  implements CurrentUserUpdateUnitOfWork
+{
+  input:
+    CurrentUserUpdateTransactionInput | null =
+      null;
+
+  error:
+    Error | null =
+      null;
+
+  constructor(
+    private readonly output:
+      UserOutput,
+  ) {}
+
+  execute(
+    input:
+      CurrentUserUpdateTransactionInput,
+  ): Promise<UserOutput> {
+    this.input =
+      input;
+
+    if (this.error) {
+      return Promise.reject(
+        this.error,
+      );
+    }
+
+    return Promise.resolve(
+      this.output,
+    );
+  }
+}
+
+function createIdempotencyFixture() {
+  const user =
+    createUser({
+      id:
+        "user-1",
+      email:
+        "alice@example.com",
+      fullName:
+        "Alice",
+      role:
+        "USER",
+      createdAt:
+        "2026-01-01T00:00:00.000Z",
+    });
+
+  const repository =
+    new InMemoryUserRepository(
+      [user],
+    );
+
+  const idempotency =
+    new FakeIdempotencyRepository();
+
+  const output:
+    UserOutput = {
+      id:
+        "user-1",
+      email:
+        "alice@example.com",
+      fullName:
+        "Alice Updated",
+      role:
+        "USER",
+      status:
+        "ACTIVE",
+      version:
+        1,
+      createdAt:
+        "2026-01-01T00:00:00.000Z",
+      updatedAt:
+        "2026-10-05T10:00:00.000Z",
+    };
+
+  const unitOfWork =
+    new FakeCurrentUserUpdateUnitOfWork(
+      output,
+    );
+
+  const useCase =
+    new UpdateCurrentUserUseCase(
+      repository,
+      new FakeClock(
+        new Date(
+          "2026-10-05T10:00:00.000Z",
+        ),
+      ),
+      idempotency,
+      new FakePayloadHasher(
+        "request-hash",
+      ),
+      unitOfWork,
+    );
+
+  return {
+    idempotency,
+    output,
+    repository,
+    unitOfWork,
+    useCase,
+  };
+}
+
+describe(
+  "UpdateCurrentUserUseCase idempotency",
+  () => {
+    it(
+      "replays a stored response for the same request",
+      async () => {
+        const {
+          idempotency,
+          output,
+          unitOfWork,
+          useCase,
+        } =
+          createIdempotencyFixture();
+
+        idempotency.records = [
+          {
+            scope:
+              "users.update-current:user-1",
+            key:
+              "request-1",
+            requestHash:
+              "request-hash",
+            response:
+              output,
+          },
+        ];
+
+        const result =
+          await useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "Alice Updated",
+              version:
+                0,
+            },
+            "  request-1  ",
+          );
+
+        expect(
+          result,
+        ).toEqual(
+          output,
+        );
+
+        expect(
+          unitOfWork.input,
+        ).toBeNull();
+
+        expect(
+          idempotency.calls,
+        ).toEqual([
+          {
+            scope:
+              "users.update-current:user-1",
+            key:
+              "request-1",
+          },
+        ]);
+      },
+    );
+
+    it(
+      "rejects reuse of a key with a different payload",
+      async () => {
+        const {
+          idempotency,
+          output,
+          useCase,
+        } =
+          createIdempotencyFixture();
+
+        idempotency.records = [
+          {
+            scope:
+              "users.update-current:user-1",
+            key:
+              "request-1",
+            requestHash:
+              "different-hash",
+            response:
+              output,
+          },
+        ];
+
+        await expect(
+          useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "Alice Updated",
+              version:
+                0,
+            },
+            "request-1",
+          ),
+        ).rejects.toMatchObject({
+          code:
+            "IDEMPOTENCY_KEY_REUSED",
+          status:
+            409,
+        });
+      },
+    );
+
+    it(
+      "executes the atomic unit of work for a new key",
+      async () => {
+        const {
+          output,
+          unitOfWork,
+          useCase,
+        } =
+          createIdempotencyFixture();
+
+        const result =
+          await useCase.execute(
+            "user-1",
+            {
+              fullName:
+                " Alice Updated ",
+              version:
+                0,
+            },
+            "request-1",
+          );
+
+        expect(
+          result,
+        ).toEqual(
+          output,
+        );
+
+        expect(
+          unitOfWork.input
+            ?.changed,
+        ).toBe(
+          true,
+        );
+
+        expect(
+          unitOfWork.input
+            ?.idempotency,
+        ).toEqual({
+          scope:
+            "users.update-current:user-1",
+          key:
+            "request-1",
+          requestHash:
+            "request-hash",
+        });
+      },
+    );
+
+    it(
+      "replays the winner after a duplicate-key race",
+      async () => {
+        const {
+          idempotency,
+          output,
+          unitOfWork,
+          useCase,
+        } =
+          createIdempotencyFixture();
+
+        idempotency.records = [
+          null,
+          {
+            scope:
+              "users.update-current:user-1",
+            key:
+              "request-1",
+            requestHash:
+              "request-hash",
+            response:
+              output,
+          },
+        ];
+
+        unitOfWork.error =
+          new DuplicateIdempotencyKeyError();
+
+        const result =
+          await useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "Alice Updated",
+              version:
+                0,
+            },
+            "request-1",
+          );
+
+        expect(
+          result,
+        ).toEqual(
+          output,
+        );
+
+        expect(
+          idempotency.calls,
+        ).toHaveLength(
+          2,
+        );
+      },
+    );
+
+    it(
+      "maps an idempotent write version race to conflict",
+      async () => {
+        const {
+          unitOfWork,
+          useCase,
+        } =
+          createIdempotencyFixture();
+
+        unitOfWork.error =
+          new UserVersionConflictError();
+
+        await expect(
+          useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "Alice Updated",
+              version:
+                0,
+            },
+            "request-1",
+          ),
+        ).rejects.toMatchObject({
+          code:
+            "USER_CONCURRENT_MODIFICATION",
+          status:
+            409,
+        });
+      },
+    );
+
+    it(
+      "rejects an incomplete stored idempotency record",
+      async () => {
+        const {
+          idempotency,
+          useCase,
+        } =
+          createIdempotencyFixture();
+
+        idempotency.records = [
+          {
+            scope:
+              "users.update-current:user-1",
+            key:
+              "request-1",
+            requestHash:
+              "request-hash",
+            response:
+              null,
+          },
+        ];
+
+        await expect(
+          useCase.execute(
+            "user-1",
+            {
+              fullName:
+                "Alice Updated",
+              version:
+                0,
+            },
+            "request-1",
+          ),
+        ).rejects.toThrow(
+          "Stored idempotency response is missing",
+        );
       },
     );
   },
